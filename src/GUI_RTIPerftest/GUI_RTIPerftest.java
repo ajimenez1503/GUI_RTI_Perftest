@@ -19,20 +19,34 @@ public class GUI_RTIPerftest {
     /**
      * types of Operating Systems
      */
-    public enum OSType {
+    private enum OSType {
         Windows, Darwin, Linux, Other
     };
 
-    // cached result of OS detection
-    protected static OSType detectedOS;
+    private static OSType detectedOS; // cached result of OS detection
+    private Shell shell;
+    private TabFolder folder;
+    private ArrayList<Text> listTextCompile; // create list of text elements
+    private Map<String, String> mapParameter;// create dictionary with parameter
 
     /**
-     * detect the operating system from the os.name System property and cache
+     * Constructor
+     */
+    public GUI_RTIPerftest(Display display) {
+        listTextCompile = new ArrayList<Text>();
+        mapParameter = new HashMap<String, String>();
+        shell = new Shell(display, SWT.SHELL_TRIM | SWT.CENTER);
+        folder = new TabFolder(shell, SWT.NONE);
+        initUI(display);
+    }
+
+    /**
+     * Detect the operating system from the os.name System property and cache
      * the result
      *
      * @returns - the operating system detected
      */
-    public static OSType getOperatingSystemType() {
+    private OSType getOperatingSystemType() {
         if (detectedOS == null) {
             String OS = System.getProperty("os.name", "generic").toLowerCase(Locale.ENGLISH);
             if ((OS.indexOf("mac") >= 0) || (OS.indexOf("darwin") >= 0)) {
@@ -48,38 +62,51 @@ public class GUI_RTIPerftest {
         return detectedOS;
     }
 
-    public GUI_RTIPerftest(Display display) {
-        initUI(display);
-    }
-
-    private void cleanInput(List listOutput, ArrayList<Text> text) {
+    /**
+     * Clean all the input. The List of output and the list of text
+     * 
+     * @param listOutput
+     * @param texts
+     */
+    private void cleanInput(List listOutput, ArrayList<Text> listText) {
         listOutput.removeAll();
-        for (int i = 0; i < text.size(); i++) {
-            text.get(i).setText("");
+        for (int i = 0; i < listText.size(); i++) {
+            listText.get(i).setText("");
         }
     }
 
-    private Boolean compile(Map<String, String> mapCompileParameter, Text textCommand, List listOutput) {
+    /**
+     * Run the command compile in the OS
+     *
+     * @param textCommand
+     * @param listOutput
+     *
+     * @returns - True if the commands works, False if the OS is not found
+     */
+    private Boolean compile(Text textCommand, List listOutput) {
         listOutput.removeAll();
         // create parameter
-        String command = mapCompileParameter.get("--nddshome");
-        command += mapCompileParameter.get("--platform");
-        command += mapCompileParameter.get("--skip-cpp-build");
-        command += mapCompileParameter.get("--skip-cpp03-build");
-        command += mapCompileParameter.get("--skip-java-build");
-        command += mapCompileParameter.get("--debug");
-        command += mapCompileParameter.get("--secure");
-        command += mapCompileParameter.get("--openssl-home");
+        String command = mapParameter.get("--nddshome");
+        command += mapParameter.get("--platform");
+        command += mapParameter.get("--skip-cpp-build");
+        command += mapParameter.get("--skip-cpp03-build");
+        command += mapParameter.get("--skip-java-build");
+        command += mapParameter.get("--debug");
+        command += mapParameter.get("--secure");
+        command += mapParameter.get("--openssl-home");
 
         // check if Linux or Win or Darwin
-        if (getOperatingSystemType() == OSType.Linux) {
-            command = mapCompileParameter.get("Perftest") + "/build.sh" + command;
-        } else if (getOperatingSystemType() == OSType.Windows) {
-            command = mapCompileParameter.get("Perftest") + "/build.bat" + command;
-            command += mapCompileParameter.get("--skip-cs-build");
+        if (getOperatingSystemType() == OSType.Linux
+                || mapParameter.get("--platform").toLowerCase().contains("linux")) {
+            command = mapParameter.get("Perftest") + "/build.sh" + command;
+        } else if (getOperatingSystemType() == OSType.Windows
+                || mapParameter.get("--platform").toLowerCase().contains("win")) {
+            command = mapParameter.get("Perftest") + "/build.bat" + command;
+            command += mapParameter.get("--skip-cs-build");
             // C# just in win
-        } else if (getOperatingSystemType() == OSType.Darwin) {
-            command = mapCompileParameter.get("Perftest") + "/build.sh" + command;
+        } else if (getOperatingSystemType() == OSType.Darwin
+                || mapParameter.get("--platform").toLowerCase().contains("darwin")) {
+            command = mapParameter.get("Perftest") + "/build.sh" + command;
         } else {
             return false;
         }
@@ -107,16 +134,27 @@ public class GUI_RTIPerftest {
         return true;
     }
 
-    private Boolean compile_clean(Map<String, String> mapCompileParameter, Text textCommand, List listOutput) {
+    /**
+     * Run the command compile --clean in the OS
+     *
+     * @param textCommand
+     * @param listOutput
+     *
+     * @returns - True if the commands works, False if the OS is not found
+     */
+    private Boolean compile_clean(Text textCommand, List listOutput) {
         listOutput.removeAll();
         String command = "";
         // check if Linux or Win or Darwin
-        if (getOperatingSystemType() == OSType.Linux) {
-            command = mapCompileParameter.get("Perftest") + "/build.sh --clean";
-        } else if (getOperatingSystemType() == OSType.Windows) {
-            command = mapCompileParameter.get("Perftest") + "/build.bat --clean";
-        } else if (getOperatingSystemType() == OSType.Darwin) {
-            command = mapCompileParameter.get("Perftest") + "/build.sh --clean";
+        if (getOperatingSystemType() == OSType.Linux
+                || mapParameter.get("--platform").toLowerCase().contains("linux")) {
+            command = mapParameter.get("Perftest") + "/build.sh --clean";
+        } else if (getOperatingSystemType() == OSType.Windows
+                || mapParameter.get("--platform").toLowerCase().contains("win")) {
+            command = mapParameter.get("Perftest") + "/build.bat --clean";
+        } else if (getOperatingSystemType() == OSType.Darwin
+                || mapParameter.get("--platform").toLowerCase().contains("darwin")) {
+            command = mapParameter.get("Perftest") + "/build.sh --clean";
         } else {
             return false;
         }
@@ -143,32 +181,53 @@ public class GUI_RTIPerftest {
         return true;
     }
 
+    /**
+     * Run the GUI with two tabs
+     *
+     * @param display
+     *
+     */
     private void initUI(Display display) {
-
-        Shell shell = new Shell(display, SWT.SHELL_TRIM | SWT.CENTER);
-
         shell.setLayout(new FillLayout());
+        display_tab_compile(); // Tab 1 (compile)
+        display_tab_execution(); // Tab 2 (execute)
+        shell.open();
+        shell.pack();
+        shell.setText("RTI perftest");
+        shell.setSize(900, 900);
 
-        TabFolder folder = new TabFolder(shell, SWT.NONE);
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
+    }
 
-        RowLayout layout = new RowLayout();
-        layout.wrap = true;
-        layout.pack = true;
-        layout.justify = true;
-        layout.type = SWT.VERTICAL;
+    /**
+     * Display an error in another windows
+     *
+     * @param shell
+     * @param message
+     */
+    private void show_error(String message) {
+        MessageBox messageBox = new MessageBox(shell, SWT.ICON_WARNING);
+        messageBox.setText("Warning");
+        messageBox.setMessage(message);
+        messageBox.open();
+        System.out.println(message);
+    }
 
-        // Tab 1 (compile)
-        // create dictionary with parameter
-        Map<String, String> mapCompileParameter = new HashMap<String, String>();
-
-        // create list of text elements
-        ArrayList listTextCompile = new ArrayList();
-
+    /**
+     * Display the tab of the compile
+     *
+     */
+    private void display_tab_compile() {
         TabItem tabCompile = new TabItem(folder, SWT.NONE);
         tabCompile.setText("compile");
 
         Composite compositeCompile = new Composite(folder, SWT.NONE);
         compositeCompile.setLayout(new GridLayout(2, false));
+        tabCompile.setControl(compositeCompile);
 
         GridData gridData = new GridData();
         gridData.horizontalAlignment = SWT.FILL;
@@ -180,7 +239,8 @@ public class GUI_RTIPerftest {
         Text textPerftest = new Text(compositeCompile, SWT.BORDER);
         textPerftest.setLayoutData(gridData);
         listTextCompile.add(textPerftest);
-        textPerftest.setText("/home/jimenez/Escritorio/PERFTEST/perftest");
+        textPerftest.setText("/home/jimenez/Escritorio/PERFTEST/perftest"); // TODO
+                                                                            // delete
 
         // NDDSHOME
         Label labelNDDSHOME = new Label(compositeCompile, SWT.NONE);
@@ -195,9 +255,9 @@ public class GUI_RTIPerftest {
         Text textPlaform = new Text(compositeCompile, SWT.BORDER);
         textPlaform.setLayoutData(gridData);
         listTextCompile.add(textPlaform);
-        textPlaform.setText("x64Linux3gcc5.8.2");
+        textPlaform.setText("x64Linux3gcc5.8.2"); // TODO delete
 
-        // Create four checkboxs for the languages
+        // four checkboxs for the languages
         Button language_cpp = new Button(compositeCompile, SWT.CHECK);
         language_cpp.setText("CPP");
         language_cpp.setSelection(true);
@@ -208,14 +268,14 @@ public class GUI_RTIPerftest {
         Button language_java = new Button(compositeCompile, SWT.CHECK);
         language_java.setText("JAVA");
 
-        // Create 2 radio button for the for the linker
+        // two radio button for the for the linker
         Button linkerStatic = new Button(compositeCompile, SWT.RADIO);
         linkerStatic.setText("Static linked");
         linkerStatic.setSelection(true);
         Button linkerDynamic = new Button(compositeCompile, SWT.RADIO);
         linkerDynamic.setText("Dynamic linked");
 
-        // create 2 checkbox for security and debug
+        // two checkboxs for security and debug
         Button security = new Button(compositeCompile, SWT.CHECK);
         security.setText("Enable security");
         Button debug = new Button(compositeCompile, SWT.CHECK);
@@ -228,16 +288,16 @@ public class GUI_RTIPerftest {
         textOpenSSL.setLayoutData(gridData);
         listTextCompile.add(textOpenSSL);
 
+        // two buttons for compile and clean
         Button btnCompile = new Button(compositeCompile, SWT.PUSH);
         btnCompile.setText("Compile");
         btnCompile.setLayoutData(gridData);
-
         Button btnClean = new Button(compositeCompile, SWT.PUSH);
         btnClean.setText("Clean");
         btnClean.setLayoutData(gridData);
 
         // text command
-        Text textCommand = new Text(compositeCompile, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+        Text textCommand = new Text(compositeCompile, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL);
         GridData gridDataTextCommand = new GridData();
         gridDataTextCommand.horizontalSpan = 2;
         gridDataTextCommand.horizontalAlignment = SWT.FILL;
@@ -256,107 +316,114 @@ public class GUI_RTIPerftest {
         gridDataListOuput.grabExcessVerticalSpace = true;
         listOutput.setLayoutData(gridDataListOuput);
 
+        // listener button compile
         btnCompile.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 System.out.println("Button compile clicked");
-                if (textPerftest.getText() == "") {
-                    show_error(shell, "The path to the build of perftest is necessary.");
+                if (textPerftest.getText().replaceAll("\\s+", "").equals("")) {
+                    show_error("The path to the build of perftest is necessary.");
                     return;
                 }
-                mapCompileParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
+                mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
 
                 if (!textNDDSHOME.getText().replaceAll("\\s+", "").equals("")) {
-                    mapCompileParameter.put("--nddshome",
-                            " --nddshome " + textNDDSHOME.getText().replaceAll("\\s+", ""));
+                    mapParameter.put("--nddshome", " --nddshome " + textNDDSHOME.getText().replaceAll("\\s+", ""));
                 } else {
-                    mapCompileParameter.put("--nddshome", "");
+                    mapParameter.put("--nddshome", "");
                 }
                 if (!textPlaform.getText().replaceAll("\\s+", "").equals("")) {
-                    mapCompileParameter.put("--platform",
-                            " --platform " + textPlaform.getText().replaceAll("\\s+", ""));
+                    mapParameter.put("--platform", " --platform " + textPlaform.getText().replaceAll("\\s+", ""));
                 } else {
-                    mapCompileParameter.put("--platform", "");
+                    mapParameter.put("--platform", "");
                 }
                 if (!language_cpp.getSelection()) {
-                    mapCompileParameter.put("--skip-cpp-build", " --skip-cpp-build");
+                    mapParameter.put("--skip-cpp-build", " --skip-cpp-build");
                 } else {
-                    mapCompileParameter.put("--skip-cpp-build", "");
+                    mapParameter.put("--skip-cpp-build", "");
                 }
                 if (!language_cpp03.getSelection()) {
-                    mapCompileParameter.put("--skip-cpp03-build", " --skip-cpp03-build");
+                    mapParameter.put("--skip-cpp03-build", " --skip-cpp03-build");
                 } else {
-                    mapCompileParameter.put("--skip-cpp03-build", "");
+                    mapParameter.put("--skip-cpp03-build", "");
                 }
                 if (!language_cs.getSelection()) {
-                    mapCompileParameter.put("--skip-cs-build", " --skip-cs-build");
+                    mapParameter.put("--skip-cs-build", " --skip-cs-build");
                 } else {
-                    mapCompileParameter.put("--skip-cs-build", "");
+                    mapParameter.put("--skip-cs-build", "");
                 }
                 if (!language_java.getSelection()) {
-                    mapCompileParameter.put("--skip-java-build", " --skip-java-build");
+                    mapParameter.put("--skip-java-build", " --skip-java-build");
                 } else {
-                    mapCompileParameter.put("--skip-java-build", "");
+                    mapParameter.put("--skip-java-build", "");
                 }
                 if (linkerDynamic.getSelection()) {
-                    mapCompileParameter.put("--dynamic", " --dynamic");
+                    mapParameter.put("--dynamic", " --dynamic");
                 } else {
-                    mapCompileParameter.put("--dynamic", "");
+                    mapParameter.put("--dynamic", "");
                 }
                 if (debug.getSelection()) {
-                    mapCompileParameter.put("--debug", " --debug");
+                    mapParameter.put("--debug", " --debug");
                 } else {
-                    mapCompileParameter.put("--debug", "");
+                    mapParameter.put("--debug", "");
                 }
                 if (security.getSelection()) {
                     if (linkerDynamic.getSelection()) {
-                        show_error(shell, "Secure and dynamic library together is not sopported");
+                        show_error("Secure and dynamic library together is not sopported");
                         return;
                     } else {
-                        mapCompileParameter.put("--secure", " --secure");
+                        mapParameter.put("--secure", " --secure");
                     }
                 } else {
-                    mapCompileParameter.put("--secure", "");
+                    mapParameter.put("--secure", "");
                 }
                 if (!textOpenSSL.getText().replaceAll("\\s+", "").equals("")) {
-                    if (!linkerDynamic.getSelection() && security.getSelection()) {// static
-                                                                                   // and
-                                                                                   // secure
-                        mapCompileParameter.put("--openssl-home",
+                    if (!linkerDynamic.getSelection() && security.getSelection()) {
+                        // static and secure
+                        mapParameter.put("--openssl-home",
                                 " --openssl-home " + textOpenSSL.getText().replaceAll("\\s+", ""));
                     } else {
-                        show_error(shell,
-                                "OpenSSL needs when compiling using the secure option and statically linker.");
+                        show_error("OpenSSL needs when compiling using the secure option and statically linker.");
                         return;
                     }
                 } else {
-                    mapCompileParameter.put("--openssl-home", "");
+                    mapParameter.put("--openssl-home", "");
                 }
                 // TODO cleanInput(listOutput,listTextCompile);
-                if (!compile(mapCompileParameter, textCommand, listOutput)) {
-                    show_error(shell, "You must specify a correct platform");
+                if (!compile(textCommand, listOutput)) {
+                    show_error("You must specify a correct platform");
                     return;
                 }
             }
         });
 
+        // listener button compile clean
         btnClean.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                System.out.println("Button clean clicked");
-                if (textPerftest.getText() == "") {
-                    show_error(shell, "The path to the build of perftest is necessary.");
+                System.out.println("Button compile clean clicked");
+                if (textPerftest.getText().replaceAll("\\s+", "").equals("")) {
+                    show_error("The path to the build of perftest is necessary.");
                     return;
                 }
-                mapCompileParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
-                compile_clean(mapCompileParameter, textCommand, listOutput);
+                mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
+                // TODO cleanInput(listOutput,listTextCompile);
+                if (!compile_clean(textCommand, listOutput)) {
+                    show_error("You must specify a correct platform");
+                    return;
+                }
             }
         });
+    }
 
-        tabCompile.setControl(compositeCompile);
-
-
+    private void display_tab_execution() {
         // Tab 2 (execute)
+        RowLayout layout = new RowLayout();
+        layout.wrap = true;
+        layout.pack = true;
+        layout.justify = true;
+        layout.type = SWT.VERTICAL;
+
         TabItem tab2 = new TabItem(folder, SWT.NONE);
         tab2.setText("execute");
         Composite group2 = new Composite(folder, SWT.SHADOW_IN);
@@ -375,33 +442,13 @@ public class GUI_RTIPerftest {
         });
 
         tab2.setControl(group2);
-
-        shell.open();
-        shell.pack();
-        shell.setText("RTI perftest");
-        shell.setSize(900, 900);
-
-        while (!shell.isDisposed()) {
-            if (!display.readAndDispatch()) {
-                display.sleep();
-
-            }
-        }
-    }
-
-    private void show_error(Shell shell, String message) {
-        MessageBox messageBox = new MessageBox(shell, SWT.ICON_WARNING);
-        messageBox.setText("Warning");
-        messageBox.setMessage(message);
-        messageBox.open();
-        System.out.println(message);
     }
 
     @SuppressWarnings("unused")
     public static void main(String[] args) {
         // System.out.println(SWT.getPlatform());
         // System.out.println(SWT.getVersion());
-        System.out.println(System.getProperty("os.name"));
+        // System.out.println(System.getProperty("os.name"));
         Display display = new Display();
         GUI_RTIPerftest ex = new GUI_RTIPerftest(display);
         display.dispose();
