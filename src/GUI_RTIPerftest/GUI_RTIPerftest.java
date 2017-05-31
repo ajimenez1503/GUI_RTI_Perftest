@@ -13,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Locale;
+import java.util.Arrays;
 
 public class GUI_RTIPerftest {
 
@@ -23,17 +24,32 @@ public class GUI_RTIPerftest {
         Windows, Darwin, Linux, Other
     };
 
+    /**
+     * types of Supported Languages
+     */
+    private enum Language {
+        cpp, cpp03, cs, java
+    };
+
     private static OSType detectedOS; // cached result of OS detection
     private Shell shell;
     private TabFolder folder;
-    private ArrayList<Text> listTextCompile; // create list of text elements
+    private ArrayList<Text> listTextParameter; // create list of text elements
     private Map<String, String> mapParameter;// create dictionary with parameter
+    String[] possiblePlatform;
+
+    private void set_all_possible_platform() {
+        possiblePlatform = new String[] { "", "x64Win64VS2015", "x64Darwin16clang8.0", "x64Linux3gcc5.4.0",
+                "x64Linux3gcc4.8.2" };
+        Arrays.sort(possiblePlatform);
+    }
 
     /**
      * Constructor
      */
     public GUI_RTIPerftest(Display display) {
-        listTextCompile = new ArrayList<Text>();
+        set_all_possible_platform();
+        listTextParameter = new ArrayList<Text>();
         mapParameter = new HashMap<String, String>();
         shell = new Shell(display, SWT.SHELL_TRIM | SWT.CENTER);
         folder = new TabFolder(shell, SWT.NONE);
@@ -122,6 +138,7 @@ public class GUI_RTIPerftest {
                 proc.waitFor();
             } catch (InterruptedException e) {
                 System.out.println(e.getMessage());
+                listOutput.add(e.getMessage());
             }
             while (read.ready()) {
                 String output = read.readLine();
@@ -130,6 +147,106 @@ public class GUI_RTIPerftest {
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
+            listOutput.add(e.getMessage());
+        }
+        return true;
+    }
+
+    /**
+     * Run the command compile in the OS
+     *
+     * @param textCommand
+     * @param listOutput
+     *
+     * @returns - True if the commands works, False if the OS is not found
+     */
+    private Boolean execute(Text textCommand, List listOutput, Language language) {
+        listOutput.removeAll();
+        // create parameter
+        String command = mapParameter.get("Perftest") + "/bin/";
+
+        // check if Linux or Win or Darwin
+        if (getOperatingSystemType() == OSType.Linux
+                || mapParameter.get("--platform").toLowerCase().contains("linux")) {
+            switch (language) {
+            case cpp:
+                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                break;
+            case cpp03:
+                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                break;
+            case cs:
+                return false;
+            case java:
+                command += "Release/perftest_java.sh";
+                break;
+            }
+        } else if (getOperatingSystemType() == OSType.Windows
+                || mapParameter.get("--platform").toLowerCase().contains("win")) {
+            switch (language) {
+            case cpp:
+                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                break;
+            case cpp03:
+                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                break;
+            case cs:
+                command += mapParameter.get("platform") + "/release/perftest_cs";
+                break;
+            case java:
+                command += "Release/perftest_java.bat";
+                break;
+            }
+        } else if (getOperatingSystemType() == OSType.Darwin
+                || mapParameter.get("--platform").toLowerCase().contains("darwin")) {
+            switch (language) {
+            case cpp:
+                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                break;
+            case cpp03:
+                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                break;
+            case cs:
+                return false;
+            case java:
+                command += "Release/perftest_java.bat";
+                break;
+            }
+        } else {
+            return false;
+        }
+
+        command += mapParameter.get("-pub");
+        command += mapParameter.get("-sub");
+        command += mapParameter.get("-domain");
+        command += mapParameter.get("-bestEffort");
+        command += mapParameter.get("-dataLen");
+        command += mapParameter.get("-executionTime");
+        command += mapParameter.get("-pubRate");
+        command += mapParameter.get("-sendQueueSize");
+        command += " -noXmlQos";// always use the QoS from the String
+
+        // print command to run
+        System.out.println(command);
+        textCommand.setText(command);
+
+        try {
+            Process proc = Runtime.getRuntime().exec(command);
+            BufferedReader read = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            try {
+                proc.waitFor();
+            } catch (InterruptedException e) {
+                System.out.println(e.getMessage());
+                listOutput.add(e.getMessage());
+            }
+            while (read.ready()) {
+                String output = read.readLine();
+                System.out.println(output);
+                listOutput.add(output);
+            }
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            listOutput.add(e.getMessage());
         }
         return true;
     }
@@ -229,92 +346,94 @@ public class GUI_RTIPerftest {
         compositeCompile.setLayout(new GridLayout(2, false));
         tabCompile.setControl(compositeCompile);
 
-        GridData gridData = new GridData();
-        gridData.horizontalAlignment = SWT.FILL;
-        gridData.grabExcessHorizontalSpace = true;
-
         // Perftest path
         Label labelPerftest = new Label(compositeCompile, SWT.NONE);
         labelPerftest.setText("Perftest path");
+        labelPerftest.setToolTipText("Path to the RTI perftest bundle");
         Text textPerftest = new Text(compositeCompile, SWT.BORDER);
-        textPerftest.setLayoutData(gridData);
-        listTextCompile.add(textPerftest);
-        textPerftest.setText("/home/jimenez/Escritorio/PERFTEST/perftest"); // TODO
-                                                                            // delete
+        textPerftest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textPerftest);
+        textPerftest.setText("/home/ajimenez/github/rtiperftest_test"); // TODO
+                                                                        // delete
 
         // NDDSHOME
         Label labelNDDSHOME = new Label(compositeCompile, SWT.NONE);
         labelNDDSHOME.setText("NDDSHOME");
+        labelNDDSHOME.setToolTipText(
+                "Path to the RTI Connext DDS installation. If this parameter is not present, the $NDDSHOME variable should be.");
         Text textNDDSHOME = new Text(compositeCompile, SWT.BORDER);
-        textNDDSHOME.setLayoutData(gridData);
-        listTextCompile.add(textNDDSHOME);
+        textNDDSHOME.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textNDDSHOME);
+        textNDDSHOME.setText("/home/ajimenez/rti_connext_dds-5.2.7");
 
         // Platform
         Label labelPlaform = new Label(compositeCompile, SWT.NONE);
         labelPlaform.setText("Plaform");
-        Text textPlaform = new Text(compositeCompile, SWT.BORDER);
-        textPlaform.setLayoutData(gridData);
-        listTextCompile.add(textPlaform);
-        textPlaform.setText("x64Linux3gcc5.8.2"); // TODO delete
+        labelPlaform.setToolTipText("Architecture/Platform for which build.sh is going to compile RTI Perftest.");
+        Combo comboPlaform = new Combo(compositeCompile, SWT.READ_ONLY);
+        comboPlaform.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        comboPlaform.setItems(possiblePlatform);
+        comboPlaform.setText(possiblePlatform[possiblePlatform.length - 1]);
 
-        // four checkboxs for the languages
-        Button language_cpp = new Button(compositeCompile, SWT.CHECK);
+        // four radio for the languages
+        Group groupLanguage = new Group(compositeCompile, SWT.NONE);
+        groupLanguage.setLayout(new GridLayout(4, true));
+        groupLanguage.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
+        groupLanguage.setText("Language to compile");
+        Button language_cpp = new Button(groupLanguage, SWT.CHECK);
         language_cpp.setText("CPP");
         language_cpp.setSelection(true);
-        Button language_cpp03 = new Button(compositeCompile, SWT.CHECK);
+        Button language_cpp03 = new Button(groupLanguage, SWT.CHECK);
         language_cpp03.setText("CPP03");
-        Button language_cs = new Button(compositeCompile, SWT.CHECK);
+        Button language_cs = new Button(groupLanguage, SWT.CHECK);
         language_cs.setText("C#");
-        Button language_java = new Button(compositeCompile, SWT.CHECK);
+        Button language_java = new Button(groupLanguage, SWT.CHECK);
         language_java.setText("JAVA");
 
-        // two radio button for the for the linker
+        // two radio button for the linker
         Button linkerStatic = new Button(compositeCompile, SWT.RADIO);
         linkerStatic.setText("Static linked");
+        linkerStatic.setToolTipText("Compile using the RTI Connext DDS Static libraries.");
         linkerStatic.setSelection(true);
         Button linkerDynamic = new Button(compositeCompile, SWT.RADIO);
+        linkerDynamic.setToolTipText("Compile using the RTI Connext DDS Dynamic libraries.");
         linkerDynamic.setText("Dynamic linked");
 
         // two checkboxs for security and debug
         Button security = new Button(compositeCompile, SWT.CHECK);
+        security.setToolTipText(
+                "Enable the compilation of the Perfest code specific for security and adds the RTI Connext DDS Security Libraries in the linking step (if compiling statically). ");
         security.setText("Enable security");
         Button debug = new Button(compositeCompile, SWT.CHECK);
+        debug.setToolTipText("Compile using the RTI Connext DDS debug libraries.");
         debug.setText("Debug libraries");
 
         // OpenSSL
         Label labelOpenSSL = new Label(compositeCompile, SWT.NONE);
         labelOpenSSL.setText("Path to the openSSL");
+        labelOpenSSL.setToolTipText(
+                "Path to the openSSL home directory. Needed when compiling using the --secure option and statically.");
         Text textOpenSSL = new Text(compositeCompile, SWT.BORDER);
-        textOpenSSL.setLayoutData(gridData);
-        listTextCompile.add(textOpenSSL);
+        textOpenSSL.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textOpenSSL);
 
         // two buttons for compile and clean
         Button btnCompile = new Button(compositeCompile, SWT.PUSH);
         btnCompile.setText("Compile");
-        btnCompile.setLayoutData(gridData);
+        btnCompile.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Button btnClean = new Button(compositeCompile, SWT.PUSH);
         btnClean.setText("Clean");
-        btnClean.setLayoutData(gridData);
+        btnClean.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
 
         // text command
         Text textCommand = new Text(compositeCompile, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL);
-        GridData gridDataTextCommand = new GridData();
-        gridDataTextCommand.horizontalSpan = 2;
-        gridDataTextCommand.horizontalAlignment = SWT.FILL;
-        gridDataTextCommand.grabExcessHorizontalSpace = true;
-        textCommand.setLayoutData(gridDataTextCommand);
+        textCommand.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
         textCommand.computeSize(100, 100, true);
-        listTextCompile.add(textCommand);
+        listTextParameter.add(textCommand);
 
         // text output command
         List listOutput = new List(compositeCompile, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
-        GridData gridDataListOuput = new GridData();
-        gridDataListOuput.horizontalSpan = 2;
-        gridDataListOuput.horizontalAlignment = SWT.FILL;
-        gridDataListOuput.grabExcessHorizontalSpace = true;
-        gridDataListOuput.verticalAlignment = SWT.FILL;
-        gridDataListOuput.grabExcessVerticalSpace = true;
-        listOutput.setLayoutData(gridDataListOuput);
+        listOutput.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 
         // listener button compile
         btnCompile.addSelectionListener(new SelectionAdapter() {
@@ -332,8 +451,8 @@ public class GUI_RTIPerftest {
                 } else {
                     mapParameter.put("--nddshome", "");
                 }
-                if (!textPlaform.getText().replaceAll("\\s+", "").equals("")) {
-                    mapParameter.put("--platform", " --platform " + textPlaform.getText().replaceAll("\\s+", ""));
+                if (!comboPlaform.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("--platform", " --platform " + comboPlaform.getText().replaceAll("\\s+", ""));
                 } else {
                     mapParameter.put("--platform", "");
                 }
@@ -417,31 +536,239 @@ public class GUI_RTIPerftest {
     }
 
     private void display_tab_execution() {
-        // Tab 2 (execute)
-        RowLayout layout = new RowLayout();
-        layout.wrap = true;
-        layout.pack = true;
-        layout.justify = true;
-        layout.type = SWT.VERTICAL;
+        TabItem tabExecute = new TabItem(folder, SWT.NONE);
+        tabExecute.setText("Execution");
 
-        TabItem tab2 = new TabItem(folder, SWT.NONE);
-        tab2.setText("execute");
-        Composite group2 = new Composite(folder, SWT.SHADOW_IN);
-        group2.setLayout(layout);
+        Composite compositeExecution = new Composite(folder, SWT.NONE);
+        compositeExecution.setLayout(new GridLayout(4, false));
+        tabExecute.setControl(compositeExecution);
 
-        Button quitBtn = new Button(group2, SWT.PUSH);
-        quitBtn.setText("Quit");
-        quitBtn.setLayoutData(new RowData(80, 30));
+        // Perftest path
+        Label labelPerftest = new Label(compositeExecution, SWT.NONE);
+        labelPerftest.setText("Perftest path");
+        labelPerftest.setToolTipText("Path to the RTI perftest bundle");
+        Text textPerftest = new Text(compositeExecution, SWT.BORDER);
+        textPerftest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textPerftest);
+        textPerftest.setText("/home/ajimenez/github/rtiperftest_test"); // TODO
+                                                                        // delete
 
-        quitBtn.addSelectionListener(new SelectionAdapter() {
+        // two radio button for publisher or subscriber
+        Button pub = new Button(compositeExecution, SWT.RADIO);
+        pub.setText("Run Publisher");
+        pub.setToolTipText("Set test to be a publisher.");
+        pub.setSelection(true);
+        Button sub = new Button(compositeExecution, SWT.RADIO);
+        sub.setText("Run Subscriber");
+        sub.setToolTipText("Set test to be a subscriber.");
+
+        // Platform
+        Label labelPlaform = new Label(compositeExecution, SWT.NONE);
+        labelPlaform.setText("Plaform");
+        labelPlaform.setToolTipText("Architecture/Platform for which build.sh is going to compile RTI Perftest.");
+        Combo comboPlaform = new Combo(compositeExecution, SWT.READ_ONLY);
+        comboPlaform.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        comboPlaform.setItems(possiblePlatform);
+        comboPlaform.setText(possiblePlatform[possiblePlatform.length - 1]);
+
+        // domain id
+        Label labelDomain = new Label(compositeExecution, SWT.NONE);
+        labelDomain.setText("Domain");
+        labelDomain.setToolTipText(
+                "The publisher and subscriber applications must use the same domain ID in order to communicate.");
+        Text textDomain = new Text(compositeExecution, SWT.BORDER);
+        textDomain.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textDomain);
+        textDomain.setText("0");
+
+        // four radio for the languages
+        Group groupLanguage = new Group(compositeExecution, SWT.NONE);
+        groupLanguage.setLayout(new GridLayout(4, false));
+        groupLanguage.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        groupLanguage.setText("Language to execute");
+        Button language_cpp = new Button(groupLanguage, SWT.RADIO);
+        language_cpp.setText("CPP");
+        language_cpp.setSelection(true);
+        Button language_cpp03 = new Button(groupLanguage, SWT.RADIO);
+        language_cpp03.setText("CPP03");
+        Button language_cs = new Button(groupLanguage, SWT.RADIO);
+        language_cs.setText("C#");
+        Button language_java = new Button(groupLanguage, SWT.RADIO);
+        language_java.setText("JAVA");
+
+        // two radio button for the delivery
+        Group groupDelivery = new Group(compositeExecution, SWT.NONE);
+        groupDelivery.setLayout(new GridLayout(2, false));
+        groupDelivery.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        groupDelivery.setText("Delivery");
+        Button reliabiliy = new Button(groupDelivery, SWT.RADIO);
+        reliabiliy.setText("Reliabiliy");
+        reliabiliy.setToolTipText("Use Reliabiliy communication.");
+        reliabiliy.setSelection(true);
+        Button bestEffort = new Button(groupDelivery, SWT.RADIO);
+        bestEffort.setText("Best Effort");
+        reliabiliy.setToolTipText("Use best-effort communication.");
+
+        // two radio button for the keyed and unkeyed
+        Group groupKey = new Group(compositeExecution, SWT.NONE);
+        groupKey.setLayout(new GridLayout(2, false));
+        groupKey.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        groupKey.setText("Delibery");
+        Button unkeyed = new Button(groupKey, SWT.RADIO);
+        unkeyed.setToolTipText("Specify the use of a unkeyed type.");
+        unkeyed.setText("keyed");
+        unkeyed.setSelection(true);
+        Button keyed = new Button(groupKey, SWT.RADIO);
+        keyed.setText("keyed");
+        keyed.setToolTipText("Specify the use of a keyed type.");
+
+        // Date Length
+        Label labelDataLen = new Label(compositeExecution, SWT.NONE);
+        labelDataLen.setText("Data Length");
+        keyed.setToolTipText("Length of payload in bytes for each send.");
+        Text textDataLen = new Text(compositeExecution, SWT.BORDER);
+        textDataLen.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textDataLen);
+        textDataLen.setText("100");
+
+        // Execution Time
+        Label labelExecuteionTime = new Label(compositeExecution, SWT.NONE);
+        labelExecuteionTime.setText("Execution Time");
+        labelExecuteionTime.setToolTipText(
+                "Allows you to limit the test duration by specifying the number of seconds to run the test.");
+        Text textExecuteionTime = new Text(compositeExecution, SWT.BORDER);
+        textExecuteionTime.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textExecuteionTime.setText("120");
+        listTextParameter.add(textExecuteionTime);
+
+        // PubRate
+        Label labelPubRate = new Label(compositeExecution, SWT.NONE);
+        labelPubRate.setText("Publication Rate");
+        labelPubRate.setToolTipText("Limit the throughput to the specified number of samples per second.");
+        Text textPubRate = new Text(compositeExecution, SWT.BORDER);
+        textPubRate.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textPubRate);
+
+        // SendQueueSize
+        Label labelSendQueueSize = new Label(compositeExecution, SWT.NONE);
+        labelSendQueueSize.setText("Send Queue Size");
+        labelSendQueueSize.setToolTipText("Size of the send queue.");
+        Text textSendQueueSize = new Text(compositeExecution, SWT.BORDER);
+        textSendQueueSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textSendQueueSize);
+
+        // three buttons for compile and advance option and security option
+        Group groupButtons = new Group(compositeExecution, SWT.NONE);
+        groupButtons.setLayout(new GridLayout(3, false));
+        groupButtons.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
+        Button btnAdvancedOption = new Button(groupButtons, SWT.PUSH);
+        btnAdvancedOption.setText("Advanced Option");
+        btnAdvancedOption.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button btnSecureOption = new Button(groupButtons, SWT.PUSH);
+        btnSecureOption.setText("Secure Option");
+        btnSecureOption.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button btnExecute = new Button(groupButtons, SWT.PUSH);
+        btnExecute.setText("Compile");
+        btnExecute.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+
+        // text command
+        Text textCommand = new Text(compositeExecution, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL);
+        textCommand.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
+        textCommand.computeSize(100, 100, true);
+        listTextParameter.add(textCommand);
+
+        // text output command
+        List listOutput = new List(compositeExecution, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+        listOutput.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1));
+
+        // listener button compile
+        btnExecute.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                shell.getDisplay().dispose();
-                System.exit(0);
+                Language language = Language.cpp; // by default
+                System.out.println("Button compile clicked");
+                if (textPerftest.getText().replaceAll("\\s+", "").equals("")) {
+                    show_error("The path to the build of perftest is necessary.");
+                    return;
+                }
+                mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
+
+                if (!language_java.getSelection() && comboPlaform.getText().replaceAll("\\s+", "").equals("")) {
+                    show_error("The platfomr of the execution is necessary.");
+                    return;
+                } else {
+                    mapParameter.put("platform", comboPlaform.getText().replaceAll("\\s+", ""));
+                }
+                if (language_cpp.getSelection()) {
+                    language = Language.cpp;
+                } else if (language_cpp03.getSelection()) {
+                    language = Language.cpp03;
+                } else if (language_cs.getSelection()) {
+                    if (comboPlaform.getText().replaceAll("\\s+", "").contains("Linux")
+                            || comboPlaform.getText().replaceAll("\\s+", "").contains("Darwin")) {
+                        show_error("You must specify a correct platform");
+                        return;
+                    } else {
+                        language = Language.cs;
+                    }
+                } else if (language_java.getSelection()) {
+                    language = Language.java;
+                }
+
+                if (pub.getSelection()) {
+                    mapParameter.put("-pub", " -pub");
+                } else {
+                    mapParameter.put("-pub", "");
+                }
+                if (sub.getSelection()) {
+                    mapParameter.put("-sub", " -sub");
+                } else {
+                    mapParameter.put("-sub", "");
+                }
+                if (!textDomain.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-domain", " -domain " + textDomain.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-domain", "");
+                }
+                if (bestEffort.getSelection()) {
+                    mapParameter.put("-bestEffort", " -bestEffort");
+                } else {
+                    mapParameter.put("-bestEffort", "");
+                }
+                if (keyed.getSelection()) {
+                    mapParameter.put("-keyed", " -keyed");
+                } else {
+                    mapParameter.put("-keyed", "");
+                }
+                if (!textDataLen.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-dataLen", " -dataLen " + textDataLen.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-dataLen", "");
+                }
+                if (!textExecuteionTime.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-executionTime",
+                            " -executionTime " + textExecuteionTime.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-executionTime", "");
+                }
+                if (!textPubRate.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-pubRate", " -pubRate " + textPubRate.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-pubRate", "");
+                }
+                if (!textSendQueueSize.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-sendQueueSize",
+                            " -sendQueueSize " + textSendQueueSize.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-sendQueueSize", "");
+                }
+                // TODO cleanInput(listOutput,listTextCompile);
+                if (!execute(textCommand, listOutput, language)) {
+                    show_error("Error in the execution.");
+                    return;
+                }
             }
         });
-
-        tab2.setControl(group2);
     }
 
     @SuppressWarnings("unused")
