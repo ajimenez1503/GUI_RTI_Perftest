@@ -24,7 +24,6 @@ public class GUI_RTIPerftest {
         Windows, Darwin, Linux, Other
     };
 
-    
     /**
      * types of Supported Languages
      */
@@ -32,47 +31,67 @@ public class GUI_RTIPerftest {
         cpp, cpp03, cs, java
     };
 
-    
     private static OSType detectedOS; // cached result of OS detection
     private Shell shell;
     private TabFolder folder;
     private ArrayList<Text> listTextParameter; // create list of text elements
     private Map<String, String> mapParameter;// create dictionary with parameter
-    String[] possiblePlatform;
-    Display display;
+    private String[] possiblePlatform;
+    private Display display;
+    private Map<String, String> listDurability;
 
-    
     /**
      * Constructor
      */
     public GUI_RTIPerftest(Display _display) {
-        display=_display;
+        display = _display;
         set_all_possible_platform();
         listTextParameter = new ArrayList<Text>();
+        set_listDurability();
         mapParameter = new HashMap<String, String>();
         shell = new Shell(display, SWT.SHELL_TRIM | SWT.CENTER);
         folder = new TabFolder(shell, SWT.NONE);
         initUI(display);
     }
-    
-    
+
+    /**
+     * Fill the list of Durability
+     */
+    private void set_listDurability() {
+        listDurability = new HashMap<String, String>();
+        listDurability.put("0 - VOLATILE", "0");
+        listDurability.put("1 - TRANSIENT LOCAL", "1");
+        listDurability.put("2 - TRANSIENT", "2");
+        listDurability.put("3 - PERSISTENT", "3");
+    }
+
+    /**
+     * Set the list of Platform according to the OS
+     */
+    private String get_paramenter(String parameter) {
+        if (!mapParameter.containsKey(parameter)) {
+            return "";
+        } else {
+            return mapParameter.get(parameter);
+        }
+    }
+
     /**
      * Set the list of Platform according to the OS
      */
     private void set_all_possible_platform() {
         if (getOperatingSystemType() == OSType.Linux) {
-            possiblePlatform = new String[] { "", "x64Linux3gcc5.4.0", "x64Linux3gcc4.8.2"};
+            possiblePlatform = new String[] { "", "x64Linux3gcc5.4.0", "x64Linux3gcc4.8.2" };
         } else if (getOperatingSystemType() == OSType.Windows) {
-            possiblePlatform = new String[] { "", "x64Win64VS2015"};
+            possiblePlatform = new String[] { "", "x64Win64VS2015" };
         } else if (getOperatingSystemType() == OSType.Darwin) {
-            possiblePlatform = new String[] { "", "x64Darwin16clang8.0"};
+            possiblePlatform = new String[] { "", "x64Darwin16clang8.0" };
         } else {
             possiblePlatform = new String[] { "", "x64Win64VS2015", "x64Darwin16clang8.0", "x64Linux3gcc5.4.0",
-            "x64Linux3gcc4.8.2" };
+                    "x64Linux3gcc4.8.2" };
         }
         Arrays.sort(possiblePlatform);
     }
-
 
     /**
      * Detect the operating system from the os.name System property and cache
@@ -96,7 +115,6 @@ public class GUI_RTIPerftest {
         return detectedOS;
     }
 
-    
     /**
      * Clean all the input. The List of output and the list of text
      * 
@@ -110,7 +128,6 @@ public class GUI_RTIPerftest {
         }
     }
 
-    
     /**
      * Run the command compile in the OS
      *
@@ -122,27 +139,26 @@ public class GUI_RTIPerftest {
     private Boolean compile(Text textCommand, List listOutput) {
         listOutput.removeAll();
         // create parameter
-        String command = mapParameter.get("--nddshome");
-        command += mapParameter.get("--platform");
-        command += mapParameter.get("--skip-cpp-build");
-        command += mapParameter.get("--skip-cpp03-build");
-        command += mapParameter.get("--skip-java-build");
-        command += mapParameter.get("--debug");
-        command += mapParameter.get("--secure");
-        command += mapParameter.get("--openssl-home");
+        String command = get_paramenter("--nddshome");
+        command += get_paramenter("--platform");
+        command += get_paramenter("--skip-cpp-build");
+        command += get_paramenter("--skip-cpp03-build");
+        command += get_paramenter("--skip-java-build");
+        command += get_paramenter("--debug");
+        command += get_paramenter("--secure");
+        command += get_paramenter("--openssl-home");
 
         // check if Linux or Win or Darwin
-        if (getOperatingSystemType() == OSType.Linux
-                || mapParameter.get("--platform").toLowerCase().contains("linux")) {
-            command = mapParameter.get("Perftest") + "/build.sh" + command;
+        if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
+            command = get_paramenter("Perftest") + "/build.sh" + command;
         } else if (getOperatingSystemType() == OSType.Windows
-                || mapParameter.get("--platform").toLowerCase().contains("win")) {
-            command = mapParameter.get("Perftest") + "/build.bat" + command;
-            command += mapParameter.get("--skip-cs-build");
+                || get_paramenter("--platform").toLowerCase().contains("win")) {
+            command = get_paramenter("Perftest") + "/build.bat" + command;
+            command += get_paramenter("--skip-cs-build");
             // C# just in win
         } else if (getOperatingSystemType() == OSType.Darwin
-                || mapParameter.get("--platform").toLowerCase().contains("darwin")) {
-            command = mapParameter.get("Perftest") + "/build.sh" + command;
+                || get_paramenter("--platform").toLowerCase().contains("darwin")) {
+            command = get_paramenter("Perftest") + "/build.sh" + command;
         } else {
             return false;
         }
@@ -172,7 +188,6 @@ public class GUI_RTIPerftest {
         return true;
     }
 
-    
     /**
      * Run the command compile in the OS
      *
@@ -184,17 +199,16 @@ public class GUI_RTIPerftest {
     private Boolean execute(Text textCommand, List listOutput, Language language) {
         listOutput.removeAll();
         // create parameter
-        String command = mapParameter.get("Perftest") + "/bin/";
+        String command = get_paramenter("Perftest") + "/bin/";
 
         // check if Linux or Win or Darwin
-        if (getOperatingSystemType() == OSType.Linux
-                || mapParameter.get("--platform").toLowerCase().contains("linux")) {
+        if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
             switch (language) {
             case cpp:
-                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                command += get_paramenter("platform") + "/release/perftest_cpp";
                 break;
             case cpp03:
-                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                command += get_paramenter("platform") + "/release/perftest_cpp";
                 break;
             case cs:
                 return false;
@@ -203,29 +217,29 @@ public class GUI_RTIPerftest {
                 break;
             }
         } else if (getOperatingSystemType() == OSType.Windows
-                || mapParameter.get("--platform").toLowerCase().contains("win")) {
+                || get_paramenter("--platform").toLowerCase().contains("win")) {
             switch (language) {
             case cpp:
-                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                command += get_paramenter("platform") + "/release/perftest_cpp";
                 break;
             case cpp03:
-                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                command += get_paramenter("platform") + "/release/perftest_cpp";
                 break;
             case cs:
-                command += mapParameter.get("platform") + "/release/perftest_cs";
+                command += get_paramenter("platform") + "/release/perftest_cs";
                 break;
             case java:
                 command += "Release/perftest_java.bat";
                 break;
             }
         } else if (getOperatingSystemType() == OSType.Darwin
-                || mapParameter.get("--platform").toLowerCase().contains("darwin")) {
+                || get_paramenter("--platform").toLowerCase().contains("darwin")) {
             switch (language) {
             case cpp:
-                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                command += get_paramenter("platform") + "/release/perftest_cpp";
                 break;
             case cpp03:
-                command += mapParameter.get("platform") + "/release/perftest_cpp";
+                command += get_paramenter("platform") + "/release/perftest_cpp";
                 break;
             case cs:
                 return false;
@@ -237,16 +251,19 @@ public class GUI_RTIPerftest {
             return false;
         }
 
-        command += mapParameter.get("-pub");
-        command += mapParameter.get("-sub");
-        command += mapParameter.get("-domain");
-        command += mapParameter.get("-bestEffort");
-        command += mapParameter.get("-dataLen");
-        command += mapParameter.get("-executionTime");
-        command += mapParameter.get("-pubRate");
-        command += mapParameter.get("-sendQueueSize");
-        command += mapParameter.get("-numPublishers");
-        command += mapParameter.get("-sidMultiSubTest");
+        command += get_paramenter("-pub");
+        command += get_paramenter("-sub");
+        command += get_paramenter("-domain");
+        command += get_paramenter("-bestEffort");
+        command += get_paramenter("-dataLen");
+        command += get_paramenter("-executionTime");
+        command += get_paramenter("-pubRate");
+        command += get_paramenter("-sendQueueSize");
+        command += get_paramenter("-numPublishers");
+        command += get_paramenter("-sidMultiSubTest");
+        command += get_paramenter("-enableSharedMemory");
+        command += get_paramenter("-enableTcp");
+        command += get_paramenter("-durability");
         command += " -noXmlQos";// always use the QoS from the String
 
         // print command to run
@@ -274,7 +291,6 @@ public class GUI_RTIPerftest {
         return true;
     }
 
-    
     /**
      * Run the command compile --clean in the OS
      *
@@ -287,15 +303,14 @@ public class GUI_RTIPerftest {
         listOutput.removeAll();
         String command = "";
         // check if Linux or Win or Darwin
-        if (getOperatingSystemType() == OSType.Linux
-                || mapParameter.get("--platform").toLowerCase().contains("linux")) {
-            command = mapParameter.get("Perftest") + "/build.sh --clean";
+        if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
+            command = get_paramenter("Perftest") + "/build.sh --clean";
         } else if (getOperatingSystemType() == OSType.Windows
-                || mapParameter.get("--platform").toLowerCase().contains("win")) {
-            command = mapParameter.get("Perftest") + "/build.bat --clean";
+                || get_paramenter("--platform").toLowerCase().contains("win")) {
+            command = get_paramenter("Perftest") + "/build.bat --clean";
         } else if (getOperatingSystemType() == OSType.Darwin
-                || mapParameter.get("--platform").toLowerCase().contains("darwin")) {
-            command = mapParameter.get("Perftest") + "/build.sh --clean";
+                || get_paramenter("--platform").toLowerCase().contains("darwin")) {
+            command = get_paramenter("Perftest") + "/build.sh --clean";
         } else {
             return false;
         }
@@ -322,9 +337,9 @@ public class GUI_RTIPerftest {
         return true;
     }
 
-    
     /**
      * Run the GUI with two tabs
+     * 
      * @param display
      *
      */
@@ -339,17 +354,16 @@ public class GUI_RTIPerftest {
 
         shell.addListener(SWT.Traverse, new Listener() {
             public void handleEvent(Event event) {
-              switch (event.detail) {
-              case SWT.TRAVERSE_ESCAPE:
-                shell.close();
-                event.detail = SWT.TRAVERSE_NONE;
-                event.doit = false;
-                break;
-              }
+                switch (event.detail) {
+                case SWT.TRAVERSE_ESCAPE:
+                    shell.close();
+                    event.detail = SWT.TRAVERSE_NONE;
+                    event.doit = false;
+                    break;
+                }
             }
-          });
-        
-        
+        });
+
         while (!shell.isDisposed()) {
             if (!display.readAndDispatch()) {
                 display.sleep();
@@ -357,9 +371,9 @@ public class GUI_RTIPerftest {
         }
     }
 
-    
     /**
      * Display an error in another windows
+     * 
      * @param shell
      * @param message
      */
@@ -371,7 +385,6 @@ public class GUI_RTIPerftest {
         System.out.println(message);
     }
 
-    
     /**
      * Display the tab of the compile
      *
@@ -573,26 +586,26 @@ public class GUI_RTIPerftest {
         });
     }
 
-    
     /**
      * Display new window with the Advanced Option of the Subscriber
      *
      */
     private void display_sub_advanced_option() {
 
-        Shell shellAdvancedOptionSub = new Shell(display, SWT.CLOSE); 
-        shellAdvancedOptionSub.setText("Subscriber Advanced Option"); 
+        Shell shellAdvancedOptionSub = new Shell(display, SWT.CLOSE);
+        shellAdvancedOptionSub.setText("Subscriber Advanced Option");
         shellAdvancedOptionSub.setLayout(new GridLayout(2, false));
 
         // numPublishers
         Label labelNumPublishers = new Label(shellAdvancedOptionSub, SWT.NONE);
         labelNumPublishers.setText("Number of publisher");
-        labelNumPublishers.setToolTipText("The subscribing application will wait for this number of publishing applications to start.");
+        labelNumPublishers.setToolTipText(
+                "The subscribing application will wait for this number of publishing applications to start.");
         Text textNumPublishers = new Text(shellAdvancedOptionSub, SWT.BORDER);
         textNumPublishers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textNumPublishers);
         textNumPublishers.setText("1");
-        
+
         // sidMultiSubTest
         Label labelSidMultiSubTest = new Label(shellAdvancedOptionSub, SWT.NONE);
         labelSidMultiSubTest.setText("ID of Subscriber");
@@ -601,39 +614,38 @@ public class GUI_RTIPerftest {
         textSidMultiSubTest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textSidMultiSubTest);
         textSidMultiSubTest.setText("0");
-        
-        shellAdvancedOptionSub.setSize(200, 100); 
-        shellAdvancedOptionSub.open(); 
-        shellAdvancedOptionSub.pack(); 
-        shellAdvancedOptionSub.addListener(SWT.Close, new Listener() 
-        { 
-           @Override 
-           public void handleEvent(Event event) 
-           { 
-               if (!textNumPublishers.getText().replaceAll("\\s+", "").equals("")) {
-                   mapParameter.put("-numPublishers", " -numPublishers " + textNumPublishers.getText().replaceAll("\\s+", ""));
-               } else {
-                   mapParameter.put("-numPublishers", "");
-               }
-               if (!textSidMultiSubTest.getText().replaceAll("\\s+", "").equals("")) {
-                   mapParameter.put("-sidMultiSubTest", " -sidMultiSubTest " + textSidMultiSubTest.getText().replaceAll("\\s+", ""));
-               } else {
-                   mapParameter.put("-sidMultiSubTest", "");
-               }
-              shellAdvancedOptionSub.dispose(); 
-           } 
-        }); 
+
+        shellAdvancedOptionSub.setSize(200, 100);
+        shellAdvancedOptionSub.open();
+        shellAdvancedOptionSub.pack();
+        shellAdvancedOptionSub.addListener(SWT.Close, new Listener() {
+            @Override
+            public void handleEvent(Event event) {
+                if (!textNumPublishers.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-numPublishers",
+                            " -numPublishers " + textNumPublishers.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-numPublishers", "");
+                }
+                if (!textSidMultiSubTest.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-sidMultiSubTest",
+                            " -sidMultiSubTest " + textSidMultiSubTest.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-sidMultiSubTest", "");
+                }
+                shellAdvancedOptionSub.dispose();
+            }
+        });
     }
-    
-    
+
     /**
      * Display new window with the Advanced Option of the Publisher
      *
      */
     private void display_pub_advanced_option() {
 
-        Shell shellAdvancedOptionPub = new Shell(display, SWT.CLOSE); 
-        shellAdvancedOptionPub.setText("Subscriber Advanced Option"); 
+        Shell shellAdvancedOptionPub = new Shell(display, SWT.CLOSE);
+        shellAdvancedOptionPub.setText("Subscriber Advanced Option");
         shellAdvancedOptionPub.setLayout(new GridLayout(4, false));
 
         // PubRate
@@ -652,31 +664,47 @@ public class GUI_RTIPerftest {
         textSendQueueSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textSendQueueSize);
 
-        shellAdvancedOptionPub.open(); 
+        // Execution Time
+        Group groupExecuteionTime = new Group(shellAdvancedOptionPub, SWT.NONE);
+        groupExecuteionTime.setLayout(new GridLayout(4, false));
+        groupExecuteionTime.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelExecuteionTime = new Label(groupExecuteionTime, SWT.NONE);
+        labelExecuteionTime.setText("Execution Time");
+        labelExecuteionTime.setToolTipText(
+                "Allows you to limit the test duration by specifying the number of seconds to run the test.");
+        Text textExecuteionTime = new Text(groupExecuteionTime, SWT.BORDER);
+        textExecuteionTime.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textExecuteionTime.setText("120");
+        listTextParameter.add(textExecuteionTime);
+
+        shellAdvancedOptionPub.open();
         shellAdvancedOptionPub.pack();
-        shellAdvancedOptionPub.setSize(400, 400); 
-        shellAdvancedOptionPub.addListener(SWT.Close, new Listener() 
-        { 
-           @Override 
-           public void handleEvent(Event event) 
-           { 
-               if (!textPubRate.getText().replaceAll("\\s+", "").equals("")) {
-                   mapParameter.put("-pubRate", " -pubRate " + textPubRate.getText().replaceAll("\\s+", ""));
-               } else {
-                   mapParameter.put("-pubRate", "");
-               }
-               if (!textSendQueueSize.getText().replaceAll("\\s+", "").equals("")) {
-                   mapParameter.put("-sendQueueSize",
-                           " -sendQueueSize " + textSendQueueSize.getText().replaceAll("\\s+", ""));
-               } else {
-                   mapParameter.put("-sendQueueSize", "");
-               }
-              shellAdvancedOptionPub.dispose(); 
-           } 
-        }); 
+        shellAdvancedOptionPub.setSize(400, 400);
+        shellAdvancedOptionPub.addListener(SWT.Close, new Listener() {
+            @Override
+            public void handleEvent(Event event) {
+                if (!textPubRate.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-pubRate", " -pubRate " + textPubRate.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-pubRate", "");
+                }
+                if (!textSendQueueSize.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-sendQueueSize",
+                            " -sendQueueSize " + textSendQueueSize.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-sendQueueSize", "");
+                }
+                if (!textExecuteionTime.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-executionTime",
+                            " -executionTime " + textExecuteionTime.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-executionTime", "");
+                }
+                shellAdvancedOptionPub.dispose();
+            }
+        });
     }
-    
-  
+
     /**
      * Display the execution tab
      *
@@ -689,40 +717,44 @@ public class GUI_RTIPerftest {
         compositeExecution.setLayout(new GridLayout(4, false));
         tabExecute.setControl(compositeExecution);
 
+        Group groupGeneral = new Group(compositeExecution, SWT.NONE);
+        groupGeneral.setLayout(new GridLayout(4, false));
+        groupGeneral.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 2));
+
         // Perftest path
-        Label labelPerftest = new Label(compositeExecution, SWT.NONE);
+        Label labelPerftest = new Label(groupGeneral, SWT.NONE);
         labelPerftest.setText("Perftest path");
         labelPerftest.setToolTipText("Path to the RTI perftest bundle");
-        Text textPerftest = new Text(compositeExecution, SWT.BORDER);
+        Text textPerftest = new Text(groupGeneral, SWT.BORDER);
         textPerftest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textPerftest);
         textPerftest.setText("/home/ajimenez/github/rtiperftest_test"); // TODO
                                                                         // delete
 
         // two radio button for publisher or subscriber
-        Button pub = new Button(compositeExecution, SWT.RADIO);
+        Button pub = new Button(groupGeneral, SWT.RADIO);
         pub.setText("Run Publisher");
         pub.setToolTipText("Set test to be a publisher.");
         pub.setSelection(true);
-        Button sub = new Button(compositeExecution, SWT.RADIO);
+        Button sub = new Button(groupGeneral, SWT.RADIO);
         sub.setText("Run Subscriber");
         sub.setToolTipText("Set test to be a subscriber.");
 
         // Platform
-        Label labelPlaform = new Label(compositeExecution, SWT.NONE);
+        Label labelPlaform = new Label(groupGeneral, SWT.NONE);
         labelPlaform.setText("Plaform");
         labelPlaform.setToolTipText("Architecture/Platform for which build.sh is going to compile RTI Perftest.");
-        Combo comboPlaform = new Combo(compositeExecution, SWT.READ_ONLY);
+        Combo comboPlaform = new Combo(groupGeneral, SWT.READ_ONLY);
         comboPlaform.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         comboPlaform.setItems(possiblePlatform);
         comboPlaform.setText(possiblePlatform[possiblePlatform.length - 1]);
 
         // domain id
-        Label labelDomain = new Label(compositeExecution, SWT.NONE);
+        Label labelDomain = new Label(groupGeneral, SWT.NONE);
         labelDomain.setText("Domain");
         labelDomain.setToolTipText(
                 "The publisher and subscriber applications must use the same domain ID in order to communicate.");
-        Text textDomain = new Text(compositeExecution, SWT.BORDER);
+        Text textDomain = new Text(groupGeneral, SWT.BORDER);
         textDomain.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textDomain);
         textDomain.setText("0");
@@ -768,39 +800,54 @@ public class GUI_RTIPerftest {
         keyed.setToolTipText("Specify the use of a keyed type.");
 
         // Date Length
-        Label labelDataLen = new Label(compositeExecution, SWT.NONE);
+        Group groupDataLen = new Group(compositeExecution, SWT.NONE);
+        groupDataLen.setLayout(new GridLayout(4, false));
+        groupDataLen.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelDataLen = new Label(groupDataLen, SWT.NONE);
         labelDataLen.setText("Data Length");
         keyed.setToolTipText("Length of payload in bytes for each send.");
-        Text textDataLen = new Text(compositeExecution, SWT.BORDER);
+        Text textDataLen = new Text(groupDataLen, SWT.BORDER);
         textDataLen.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textDataLen);
         textDataLen.setText("100");
 
-        // Execution Time
-        Label labelExecuteionTime = new Label(compositeExecution, SWT.NONE);
-        labelExecuteionTime.setText("Execution Time");
-        labelExecuteionTime.setToolTipText(
-                "Allows you to limit the test duration by specifying the number of seconds to run the test.");
-        Text textExecuteionTime = new Text(compositeExecution, SWT.BORDER);
-        textExecuteionTime.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        textExecuteionTime.setText("120");
-        listTextParameter.add(textExecuteionTime);
-        
-        // four radio for the languages
+        // four radio for the transport
         Group groupTransport = new Group(compositeExecution, SWT.NONE);
         groupTransport.setLayout(new GridLayout(4, false));
         groupTransport.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
         groupTransport.setText("Language to execute");
         Button UDP = new Button(groupTransport, SWT.RADIO);
         UDP.setText("UDP");
+        UDP.setToolTipText("Enable the UDP transport.");
         UDP.setSelection(true);
-        Button ShareMemory = new Button(groupTransport, SWT.RADIO);
-        ShareMemory.setText("Share Memory");
+        Button shareMemory = new Button(groupTransport, SWT.RADIO);
+        shareMemory.setText("Share Memory");
+        shareMemory.setToolTipText("Enable the Share Memory transport.");
         Button TCP = new Button(groupTransport, SWT.RADIO);
         TCP.setText("TCP");
-      
+        TCP.setToolTipText("Enable the TCP transport.");
 
-        // three buttons for compile and advance option and security option
+        // check button for the dynamic
+        Group groupDynamic = new Group(compositeExecution, SWT.NONE);
+        groupDynamic.setLayout(new GridLayout(4, false));
+        groupDynamic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button dynamic = new Button(groupDynamic, SWT.RADIO);
+        dynamic.setText("Use Dynamic data API");
+        dynamic.setSelection(false);
+        dynamic.setToolTipText("Run using the Dynamic Data API functions instead of the rtiddsgen generated calls.");
+
+        // Combo Durability
+        Group groupDurability = new Group(compositeExecution, SWT.NONE);
+        groupDurability.setLayout(new GridLayout(4, false));
+        groupDurability.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelDurability = new Label(groupDurability, SWT.NONE);
+        labelDurability.setText("Durability");
+        labelDurability.setToolTipText("Sets the Durability kind");
+        Combo comboDurability = new Combo(groupDurability, SWT.READ_ONLY);
+        comboDurability.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        comboDurability.setItems((String[]) listDurability.keySet().toArray(new String[listDurability.size()]));
+
+        // four buttons for compile and advance option and security option
         Group groupButtons = new Group(compositeExecution, SWT.NONE);
         groupButtons.setLayout(new GridLayout(4, false));
         groupButtons.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
@@ -887,16 +934,31 @@ public class GUI_RTIPerftest {
                 } else {
                     mapParameter.put("-keyed", "");
                 }
+                if (TCP.getSelection()) {
+                    mapParameter.put("-enableTcp", " -enableTcp");
+                } else {
+                    mapParameter.put("-enableTcp", "");
+                }
+                if (shareMemory.getSelection()) {
+                    mapParameter.put("-enableSharedMemory", " -enableSharedMemory");
+                } else {
+                    mapParameter.put("-enableSharedMemory", "");
+                }
+
                 if (!textDataLen.getText().replaceAll("\\s+", "").equals("")) {
                     mapParameter.put("-dataLen", " -dataLen " + textDataLen.getText().replaceAll("\\s+", ""));
                 } else {
                     mapParameter.put("-dataLen", "");
                 }
-                if (!textExecuteionTime.getText().replaceAll("\\s+", "").equals("")) {
-                    mapParameter.put("-executionTime",
-                            " -executionTime " + textExecuteionTime.getText().replaceAll("\\s+", ""));
+                if (dynamic.getSelection()) {
+                    mapParameter.put("-dynamicData", " -dynamicData ");
                 } else {
-                    mapParameter.put("-executionTime", "");
+                    mapParameter.put("-dynamicData", "");
+                }
+                if (!comboDurability.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-durability", " -durability " + listDurability.get(comboDurability.getText()));
+                } else {
+                    mapParameter.put("-durability", "");
                 }
                 // TODO cleanInput(listOutput,listTextCompile);
                 if (!execute(textCommand, listOutput, language)) {
@@ -905,7 +967,7 @@ public class GUI_RTIPerftest {
                 }
             }
         });
-        
+
         // listener button advance option pub
         btnAdvancedOptionPub.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -914,7 +976,7 @@ public class GUI_RTIPerftest {
                 display_pub_advanced_option();
             }
         });
-        
+
         // listener button advance option sub
         btnAdvancedOptionSub.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -923,7 +985,7 @@ public class GUI_RTIPerftest {
                 display_sub_advanced_option();
             }
         });
-        
+
         // Activate Pub advance option
         pub.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -933,7 +995,7 @@ public class GUI_RTIPerftest {
                 btnAdvancedOptionPub.setEnabled(true);
             }
         });
-        
+
         // Activate Sub advance option
         sub.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -945,7 +1007,6 @@ public class GUI_RTIPerftest {
         });
     }
 
-    
     @SuppressWarnings("unused")
     public static void main(String[] args) {
         // System.out.println(SWT.getPlatform());
