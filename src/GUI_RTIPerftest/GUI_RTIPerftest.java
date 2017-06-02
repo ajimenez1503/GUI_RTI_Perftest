@@ -24,6 +24,7 @@ public class GUI_RTIPerftest {
         Windows, Darwin, Linux, Other
     };
 
+    
     /**
      * types of Supported Languages
      */
@@ -31,23 +32,21 @@ public class GUI_RTIPerftest {
         cpp, cpp03, cs, java
     };
 
+    
     private static OSType detectedOS; // cached result of OS detection
     private Shell shell;
     private TabFolder folder;
     private ArrayList<Text> listTextParameter; // create list of text elements
     private Map<String, String> mapParameter;// create dictionary with parameter
     String[] possiblePlatform;
+    Display display;
 
-    private void set_all_possible_platform() {
-        possiblePlatform = new String[] { "", "x64Win64VS2015", "x64Darwin16clang8.0", "x64Linux3gcc5.4.0",
-                "x64Linux3gcc4.8.2" };
-        Arrays.sort(possiblePlatform);
-    }
-
+    
     /**
      * Constructor
      */
-    public GUI_RTIPerftest(Display display) {
+    public GUI_RTIPerftest(Display _display) {
+        display=_display;
         set_all_possible_platform();
         listTextParameter = new ArrayList<Text>();
         mapParameter = new HashMap<String, String>();
@@ -55,6 +54,25 @@ public class GUI_RTIPerftest {
         folder = new TabFolder(shell, SWT.NONE);
         initUI(display);
     }
+    
+    
+    /**
+     * Set the list of Platform according to the OS
+     */
+    private void set_all_possible_platform() {
+        if (getOperatingSystemType() == OSType.Linux) {
+            possiblePlatform = new String[] { "", "x64Linux3gcc5.4.0", "x64Linux3gcc4.8.2"};
+        } else if (getOperatingSystemType() == OSType.Windows) {
+            possiblePlatform = new String[] { "", "x64Win64VS2015"};
+        } else if (getOperatingSystemType() == OSType.Darwin) {
+            possiblePlatform = new String[] { "", "x64Darwin16clang8.0"};
+        } else {
+            possiblePlatform = new String[] { "", "x64Win64VS2015", "x64Darwin16clang8.0", "x64Linux3gcc5.4.0",
+            "x64Linux3gcc4.8.2" };
+        }
+        Arrays.sort(possiblePlatform);
+    }
+
 
     /**
      * Detect the operating system from the os.name System property and cache
@@ -78,6 +96,7 @@ public class GUI_RTIPerftest {
         return detectedOS;
     }
 
+    
     /**
      * Clean all the input. The List of output and the list of text
      * 
@@ -91,6 +110,7 @@ public class GUI_RTIPerftest {
         }
     }
 
+    
     /**
      * Run the command compile in the OS
      *
@@ -152,6 +172,7 @@ public class GUI_RTIPerftest {
         return true;
     }
 
+    
     /**
      * Run the command compile in the OS
      *
@@ -224,6 +245,8 @@ public class GUI_RTIPerftest {
         command += mapParameter.get("-executionTime");
         command += mapParameter.get("-pubRate");
         command += mapParameter.get("-sendQueueSize");
+        command += mapParameter.get("-numPublishers");
+        command += mapParameter.get("-sidMultiSubTest");
         command += " -noXmlQos";// always use the QoS from the String
 
         // print command to run
@@ -251,6 +274,7 @@ public class GUI_RTIPerftest {
         return true;
     }
 
+    
     /**
      * Run the command compile --clean in the OS
      *
@@ -298,9 +322,9 @@ public class GUI_RTIPerftest {
         return true;
     }
 
+    
     /**
      * Run the GUI with two tabs
-     *
      * @param display
      *
      */
@@ -313,6 +337,19 @@ public class GUI_RTIPerftest {
         shell.setText("RTI perftest");
         shell.setSize(900, 900);
 
+        shell.addListener(SWT.Traverse, new Listener() {
+            public void handleEvent(Event event) {
+              switch (event.detail) {
+              case SWT.TRAVERSE_ESCAPE:
+                shell.close();
+                event.detail = SWT.TRAVERSE_NONE;
+                event.doit = false;
+                break;
+              }
+            }
+          });
+        
+        
         while (!shell.isDisposed()) {
             if (!display.readAndDispatch()) {
                 display.sleep();
@@ -320,9 +357,9 @@ public class GUI_RTIPerftest {
         }
     }
 
+    
     /**
      * Display an error in another windows
-     *
      * @param shell
      * @param message
      */
@@ -334,6 +371,7 @@ public class GUI_RTIPerftest {
         System.out.println(message);
     }
 
+    
     /**
      * Display the tab of the compile
      *
@@ -535,6 +573,114 @@ public class GUI_RTIPerftest {
         });
     }
 
+    
+    /**
+     * Display new window with the Advanced Option of the Subscriber
+     *
+     */
+    private void display_sub_advanced_option() {
+
+        Shell shellAdvancedOptionSub = new Shell(display, SWT.CLOSE); 
+        shellAdvancedOptionSub.setText("Subscriber Advanced Option"); 
+        shellAdvancedOptionSub.setLayout(new GridLayout(2, false));
+
+        // numPublishers
+        Label labelNumPublishers = new Label(shellAdvancedOptionSub, SWT.NONE);
+        labelNumPublishers.setText("Number of publisher");
+        labelNumPublishers.setToolTipText("The subscribing application will wait for this number of publishing applications to start.");
+        Text textNumPublishers = new Text(shellAdvancedOptionSub, SWT.BORDER);
+        textNumPublishers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textNumPublishers);
+        textNumPublishers.setText("1");
+        
+        // sidMultiSubTest
+        Label labelSidMultiSubTest = new Label(shellAdvancedOptionSub, SWT.NONE);
+        labelSidMultiSubTest.setText("ID of Subscriber");
+        labelSidMultiSubTest.setToolTipText("ID of the subscriber in a multi-subscriber test.");
+        Text textSidMultiSubTest = new Text(shellAdvancedOptionSub, SWT.BORDER);
+        textSidMultiSubTest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textSidMultiSubTest);
+        textSidMultiSubTest.setText("0");
+        
+        shellAdvancedOptionSub.setSize(200, 100); 
+        shellAdvancedOptionSub.open(); 
+        shellAdvancedOptionSub.pack(); 
+        shellAdvancedOptionSub.addListener(SWT.Close, new Listener() 
+        { 
+           @Override 
+           public void handleEvent(Event event) 
+           { 
+               if (!textNumPublishers.getText().replaceAll("\\s+", "").equals("")) {
+                   mapParameter.put("-numPublishers", " -numPublishers " + textNumPublishers.getText().replaceAll("\\s+", ""));
+               } else {
+                   mapParameter.put("-numPublishers", "");
+               }
+               if (!textSidMultiSubTest.getText().replaceAll("\\s+", "").equals("")) {
+                   mapParameter.put("-sidMultiSubTest", " -sidMultiSubTest " + textSidMultiSubTest.getText().replaceAll("\\s+", ""));
+               } else {
+                   mapParameter.put("-sidMultiSubTest", "");
+               }
+              shellAdvancedOptionSub.dispose(); 
+           } 
+        }); 
+    }
+    
+    
+    /**
+     * Display new window with the Advanced Option of the Publisher
+     *
+     */
+    private void display_pub_advanced_option() {
+
+        Shell shellAdvancedOptionPub = new Shell(display, SWT.CLOSE); 
+        shellAdvancedOptionPub.setText("Subscriber Advanced Option"); 
+        shellAdvancedOptionPub.setLayout(new GridLayout(4, false));
+
+        // PubRate
+        Label labelPubRate = new Label(shellAdvancedOptionPub, SWT.NONE);
+        labelPubRate.setText("Publication Rate");
+        labelPubRate.setToolTipText("Limit the throughput to the specified number of samples per second.");
+        Text textPubRate = new Text(shellAdvancedOptionPub, SWT.BORDER);
+        textPubRate.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textPubRate);
+
+        // SendQueueSize
+        Label labelSendQueueSize = new Label(shellAdvancedOptionPub, SWT.NONE);
+        labelSendQueueSize.setText("Send Queue Size");
+        labelSendQueueSize.setToolTipText("Size of the send queue.");
+        Text textSendQueueSize = new Text(shellAdvancedOptionPub, SWT.BORDER);
+        textSendQueueSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textSendQueueSize);
+
+        shellAdvancedOptionPub.open(); 
+        shellAdvancedOptionPub.pack();
+        shellAdvancedOptionPub.setSize(400, 400); 
+        shellAdvancedOptionPub.addListener(SWT.Close, new Listener() 
+        { 
+           @Override 
+           public void handleEvent(Event event) 
+           { 
+               if (!textPubRate.getText().replaceAll("\\s+", "").equals("")) {
+                   mapParameter.put("-pubRate", " -pubRate " + textPubRate.getText().replaceAll("\\s+", ""));
+               } else {
+                   mapParameter.put("-pubRate", "");
+               }
+               if (!textSendQueueSize.getText().replaceAll("\\s+", "").equals("")) {
+                   mapParameter.put("-sendQueueSize",
+                           " -sendQueueSize " + textSendQueueSize.getText().replaceAll("\\s+", ""));
+               } else {
+                   mapParameter.put("-sendQueueSize", "");
+               }
+              shellAdvancedOptionPub.dispose(); 
+           } 
+        }); 
+    }
+    
+  
+    /**
+     * Display the execution tab
+     *
+     */
     private void display_tab_execution() {
         TabItem tabExecute = new TabItem(folder, SWT.NONE);
         tabExecute.setText("Execution");
@@ -613,7 +759,6 @@ public class GUI_RTIPerftest {
         Group groupKey = new Group(compositeExecution, SWT.NONE);
         groupKey.setLayout(new GridLayout(2, false));
         groupKey.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        groupKey.setText("Delibery");
         Button unkeyed = new Button(groupKey, SWT.RADIO);
         unkeyed.setToolTipText("Specify the use of a unkeyed type.");
         unkeyed.setText("keyed");
@@ -640,36 +785,38 @@ public class GUI_RTIPerftest {
         textExecuteionTime.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         textExecuteionTime.setText("120");
         listTextParameter.add(textExecuteionTime);
-
-        // PubRate
-        Label labelPubRate = new Label(compositeExecution, SWT.NONE);
-        labelPubRate.setText("Publication Rate");
-        labelPubRate.setToolTipText("Limit the throughput to the specified number of samples per second.");
-        Text textPubRate = new Text(compositeExecution, SWT.BORDER);
-        textPubRate.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        listTextParameter.add(textPubRate);
-
-        // SendQueueSize
-        Label labelSendQueueSize = new Label(compositeExecution, SWT.NONE);
-        labelSendQueueSize.setText("Send Queue Size");
-        labelSendQueueSize.setToolTipText("Size of the send queue.");
-        Text textSendQueueSize = new Text(compositeExecution, SWT.BORDER);
-        textSendQueueSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        listTextParameter.add(textSendQueueSize);
+        
+        // four radio for the languages
+        Group groupTransport = new Group(compositeExecution, SWT.NONE);
+        groupTransport.setLayout(new GridLayout(4, false));
+        groupTransport.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        groupTransport.setText("Language to execute");
+        Button UDP = new Button(groupTransport, SWT.RADIO);
+        UDP.setText("UDP");
+        UDP.setSelection(true);
+        Button ShareMemory = new Button(groupTransport, SWT.RADIO);
+        ShareMemory.setText("Share Memory");
+        Button TCP = new Button(groupTransport, SWT.RADIO);
+        TCP.setText("TCP");
+      
 
         // three buttons for compile and advance option and security option
         Group groupButtons = new Group(compositeExecution, SWT.NONE);
-        groupButtons.setLayout(new GridLayout(3, false));
+        groupButtons.setLayout(new GridLayout(4, false));
         groupButtons.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
-        Button btnAdvancedOption = new Button(groupButtons, SWT.PUSH);
-        btnAdvancedOption.setText("Advanced Option");
-        btnAdvancedOption.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button btnExecute = new Button(groupButtons, SWT.PUSH);
+        btnExecute.setText("Run");
+        btnExecute.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button btnAdvancedOptionPub = new Button(groupButtons, SWT.PUSH);
+        btnAdvancedOptionPub.setText("Advanced Option Pub");
+        btnAdvancedOptionPub.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button btnAdvancedOptionSub = new Button(groupButtons, SWT.PUSH);
+        btnAdvancedOptionSub.setText("Advanced Option Sub");
+        btnAdvancedOptionSub.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        btnAdvancedOptionSub.setEnabled(false);
         Button btnSecureOption = new Button(groupButtons, SWT.PUSH);
         btnSecureOption.setText("Secure Option");
         btnSecureOption.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        Button btnExecute = new Button(groupButtons, SWT.PUSH);
-        btnExecute.setText("Compile");
-        btnExecute.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
 
         // text command
         Text textCommand = new Text(compositeExecution, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL);
@@ -751,17 +898,6 @@ public class GUI_RTIPerftest {
                 } else {
                     mapParameter.put("-executionTime", "");
                 }
-                if (!textPubRate.getText().replaceAll("\\s+", "").equals("")) {
-                    mapParameter.put("-pubRate", " -pubRate " + textPubRate.getText().replaceAll("\\s+", ""));
-                } else {
-                    mapParameter.put("-pubRate", "");
-                }
-                if (!textSendQueueSize.getText().replaceAll("\\s+", "").equals("")) {
-                    mapParameter.put("-sendQueueSize",
-                            " -sendQueueSize " + textSendQueueSize.getText().replaceAll("\\s+", ""));
-                } else {
-                    mapParameter.put("-sendQueueSize", "");
-                }
                 // TODO cleanInput(listOutput,listTextCompile);
                 if (!execute(textCommand, listOutput, language)) {
                     show_error("Error in the execution.");
@@ -769,8 +905,47 @@ public class GUI_RTIPerftest {
                 }
             }
         });
+        
+        // listener button advance option pub
+        btnAdvancedOptionPub.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                System.out.println("Button advance option pub clicked");
+                display_pub_advanced_option();
+            }
+        });
+        
+        // listener button advance option sub
+        btnAdvancedOptionSub.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                System.out.println("Button advance option sub clicked");
+                display_sub_advanced_option();
+            }
+        });
+        
+        // Activate Pub advance option
+        pub.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                System.out.println("Button pub clicked");
+                btnAdvancedOptionSub.setEnabled(false);
+                btnAdvancedOptionPub.setEnabled(true);
+            }
+        });
+        
+        // Activate Sub advance option
+        sub.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                System.out.println("Button sub clicked");
+                btnAdvancedOptionPub.setEnabled(false);
+                btnAdvancedOptionSub.setEnabled(true);
+            }
+        });
     }
 
+    
     @SuppressWarnings("unused")
     public static void main(String[] args) {
         // System.out.println(SWT.getPlatform());
