@@ -39,6 +39,7 @@ public class GUI_RTIPerftest {
     private String[] possiblePlatform;
     private Display display;
     private Map<String, String> listDurability;
+    private String[] listFlowController;
 
     /**
      * Constructor
@@ -48,6 +49,7 @@ public class GUI_RTIPerftest {
         set_all_possible_platform();
         listTextParameter = new ArrayList<Text>();
         set_listDurability();
+        listFlowController = new String[] { "default", "10Gbps", "1Gbps" };
         mapParameter = new HashMap<String, String>();
         shell = new Shell(display, SWT.SHELL_TRIM | SWT.CENTER);
         folder = new TabFolder(shell, SWT.NONE);
@@ -59,7 +61,7 @@ public class GUI_RTIPerftest {
      */
     private void set_listDurability() {
         listDurability = new HashMap<String, String>();
-        listDurability.put("0 - VOLATILE", "0");
+        listDurability.put("0 - VOLATILE (Default)", "0");
         listDurability.put("1 - TRANSIENT LOCAL", "1");
         listDurability.put("2 - TRANSIENT", "2");
         listDurability.put("3 - PERSISTENT", "3");
@@ -208,7 +210,7 @@ public class GUI_RTIPerftest {
                 command += get_paramenter("platform") + "/release/perftest_cpp";
                 break;
             case cpp03:
-                command += get_paramenter("platform") + "/release/perftest_cpp";
+                command += get_paramenter("platform") + "/release/perftest_cpp03";
                 break;
             case cs:
                 return false;
@@ -223,7 +225,7 @@ public class GUI_RTIPerftest {
                 command += get_paramenter("platform") + "/release/perftest_cpp";
                 break;
             case cpp03:
-                command += get_paramenter("platform") + "/release/perftest_cpp";
+                command += get_paramenter("platform") + "/release/perftest_cpp03";
                 break;
             case cs:
                 command += get_paramenter("platform") + "/release/perftest_cs";
@@ -236,7 +238,7 @@ public class GUI_RTIPerftest {
                 || get_paramenter("--platform").toLowerCase().contains("darwin")) {
             switch (language) {
             case cpp:
-                command += get_paramenter("platform") + "/release/perftest_cpp";
+                command += get_paramenter("platform") + "/release/perftest_cpp03";
                 break;
             case cpp03:
                 command += get_paramenter("platform") + "/release/perftest_cpp";
@@ -256,15 +258,30 @@ public class GUI_RTIPerftest {
         command += get_paramenter("-domain");
         command += get_paramenter("-bestEffort");
         command += get_paramenter("-dataLen");
+        command += get_paramenter("-keyed");
+        command += get_paramenter("-instances");
+        command += get_paramenter("-enableSharedMemory");
+        command += get_paramenter("-enableTcp");
+        command += get_paramenter("-dynamicData");
+        command += get_paramenter("-durability");
+        command += get_paramenter("-multicast");
+        command += get_paramenter("-multicastAddress");
+        command += get_paramenter("-nic");
+        command += get_paramenter("-multicast");
+        command += get_paramenter("-multicastAddress");
+        command += get_paramenter("-useReadThread");
+        command += get_paramenter("-flowController");
+        command += get_paramenter("-cpu");
+        command += get_paramenter("-peer");
+        command += " -noXmlQos";// always use the QoS from the String
+
+        // pub
         command += get_paramenter("-executionTime");
         command += get_paramenter("-pubRate");
         command += get_paramenter("-sendQueueSize");
+        // Sub
         command += get_paramenter("-numPublishers");
         command += get_paramenter("-sidMultiSubTest");
-        command += get_paramenter("-enableSharedMemory");
-        command += get_paramenter("-enableTcp");
-        command += get_paramenter("-durability");
-        command += " -noXmlQos";// always use the QoS from the String
 
         // print command to run
         System.out.println(command);
@@ -706,8 +723,10 @@ public class GUI_RTIPerftest {
     }
 
     /**
-     * Display the execution tab
-     *
+     * Display the execution tab with all the parameter. However we have a list
+     * of parameter which are not added: verbosity, instanceHashBuckets,
+     * keepDurationUsec, noDirectCommunication, noPositiveAcks,
+     * waitsetDelayUsec, waitsetEventCount, asynchronous, unbounded
      */
     private void display_tab_execution() {
         TabItem tabExecute = new TabItem(folder, SWT.NONE);
@@ -785,17 +804,22 @@ public class GUI_RTIPerftest {
         reliabiliy.setSelection(true);
         Button bestEffort = new Button(groupDelivery, SWT.RADIO);
         bestEffort.setText("Best Effort");
-        reliabiliy.setToolTipText("Use best-effort communication.");
+        bestEffort.setToolTipText("Use best-effort communication.");
 
-        // two radio button for the keyed and unkeyed
+        // A check button for the keyed and a label and input for
+        // instances
         Group groupKey = new Group(compositeExecution, SWT.NONE);
-        groupKey.setLayout(new GridLayout(2, false));
+        groupKey.setLayout(new GridLayout(4, false));
         groupKey.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        Button unkeyed = new Button(groupKey, SWT.RADIO);
-        unkeyed.setToolTipText("Specify the use of a unkeyed type.");
-        unkeyed.setText("keyed");
-        unkeyed.setSelection(true);
-        Button keyed = new Button(groupKey, SWT.RADIO);
+        Label labelInstances = new Label(groupKey, SWT.NONE);
+        labelInstances.setText("Instances");
+        labelInstances.setToolTipText(
+                "Set the number of instances to use in the test. The publishing and subscribing applications must specify the same number of instances.This option only makes sense when testing a keyed data type.");
+        Text textInstances = new Text(groupKey, SWT.BORDER);
+        textInstances.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textInstances);
+        textInstances.setText("1");
+        Button keyed = new Button(groupKey, SWT.CHECK);
         keyed.setText("keyed");
         keyed.setToolTipText("Specify the use of a keyed type.");
 
@@ -805,13 +829,13 @@ public class GUI_RTIPerftest {
         groupDataLen.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelDataLen = new Label(groupDataLen, SWT.NONE);
         labelDataLen.setText("Data Length");
-        keyed.setToolTipText("Length of payload in bytes for each send.");
+        labelDataLen.setToolTipText("Length of payload in bytes for each send.");
         Text textDataLen = new Text(groupDataLen, SWT.BORDER);
         textDataLen.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textDataLen);
         textDataLen.setText("100");
 
-        // four radio for the transport
+        // three radio for the transport
         Group groupTransport = new Group(compositeExecution, SWT.NONE);
         groupTransport.setLayout(new GridLayout(4, false));
         groupTransport.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
@@ -831,14 +855,14 @@ public class GUI_RTIPerftest {
         Group groupDynamic = new Group(compositeExecution, SWT.NONE);
         groupDynamic.setLayout(new GridLayout(4, false));
         groupDynamic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        Button dynamic = new Button(groupDynamic, SWT.RADIO);
+        Button dynamic = new Button(groupDynamic, SWT.CHECK);
         dynamic.setText("Use Dynamic data API");
         dynamic.setSelection(false);
         dynamic.setToolTipText("Run using the Dynamic Data API functions instead of the rtiddsgen generated calls.");
 
         // Combo Durability
         Group groupDurability = new Group(compositeExecution, SWT.NONE);
-        groupDurability.setLayout(new GridLayout(4, false));
+        groupDurability.setLayout(new GridLayout(2, false));
         groupDurability.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelDurability = new Label(groupDurability, SWT.NONE);
         labelDurability.setText("Durability");
@@ -846,6 +870,74 @@ public class GUI_RTIPerftest {
         Combo comboDurability = new Combo(groupDurability, SWT.READ_ONLY);
         comboDurability.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         comboDurability.setItems((String[]) listDurability.keySet().toArray(new String[listDurability.size()]));
+
+        // one CHECK button for the multicast and a label and input for
+        // multicast address
+        Group groupMulticast = new Group(compositeExecution, SWT.NONE);
+        groupMulticast.setLayout(new GridLayout(3, false));
+        groupMulticast.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        Button multicast = new Button(groupMulticast, SWT.CHECK);
+        multicast.setToolTipText(
+                "Use multicast to receive data. In addition, the Datawriter heartbeats will be sent using multicast instead of unicast.");
+        multicast.setText("Multicast");
+        multicast.setSelection(false);
+        Label labelMulticast = new Label(groupMulticast, SWT.NONE);
+        labelMulticast.setText(" Address");
+        labelMulticast.setToolTipText("Specify the multicast receive address for receiving user data.");
+        Text textMulticast = new Text(groupMulticast, SWT.BORDER);
+        textMulticast.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textMulticast);
+
+        // Nic
+        Group groupNic = new Group(compositeExecution, SWT.NONE);
+        groupNic.setLayout(new GridLayout(2, false));
+        groupNic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelNic = new Label(groupNic, SWT.NONE);
+        labelNic.setText("Nic");
+        labelNic.setToolTipText(
+                "Restrict RTI Connext DDS to sending output through this interface. This can be the IP address of any available network interface on the machine.");
+        Text textNic = new Text(groupNic, SWT.BORDER);
+        textNic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textNic);
+
+        // check button for the useReadThread and for CPU
+        Group groupUseReadThreadAndCpu = new Group(compositeExecution, SWT.NONE);
+        groupUseReadThreadAndCpu.setLayout(new GridLayout(2, false));
+        groupUseReadThreadAndCpu.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
+        Button useReadThread = new Button(groupUseReadThreadAndCpu, SWT.CHECK);
+        useReadThread.setText("Use Read Thread");
+        useReadThread.setSelection(false);
+        useReadThread.setToolTipText("Use a separate thread (instead of a callback) to read data.");
+        Button cpu = new Button(groupUseReadThreadAndCpu, SWT.CHECK);
+        cpu.setText("CPU");
+        cpu.setSelection(false);
+        cpu.setToolTipText("Display the cpu used by the RTI Perftest process.");
+
+        // Combo FlowController
+        Group groupFlowController = new Group(compositeExecution, SWT.NONE);
+        groupFlowController.setLayout(new GridLayout(2, false));
+        groupFlowController.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        Label labelFlowController = new Label(groupFlowController, SWT.NONE);
+        labelFlowController.setText("Flow Controller");
+        labelFlowController.setToolTipText(
+                "Specify the name of the flow controller that will be used by the DataWriters. This will only have effect if the DataWriter uses Asynchronous Publishing either because it is using samples greater than 63000 Bytes or because the -asynchronous option is present.");
+        Combo comboFlowController = new Combo(groupFlowController, SWT.READ_ONLY);
+        comboFlowController.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        comboFlowController.setItems(listFlowController);
+        comboFlowController.setText(listFlowController[0]);
+
+        // Initial peers
+        // TODO add several initials peers, like a list
+        Group groupInitalPeers = new Group(compositeExecution, SWT.NONE);
+        groupInitalPeers.setLayout(new GridLayout(2, false));
+        groupInitalPeers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelInitalPeers = new Label(groupInitalPeers, SWT.NONE);
+        labelInitalPeers.setText("Inital Peers");
+        labelInitalPeers.setToolTipText(
+                "Adds a peer to the peer host address list. This argument may be repeated to indicate multiple peers.");
+        Text textInitalPeers = new Text(groupInitalPeers, SWT.BORDER);
+        textInitalPeers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textInitalPeers);
 
         // four buttons for compile and advance option and security option
         Group groupButtons = new Group(compositeExecution, SWT.NONE);
@@ -900,7 +992,7 @@ public class GUI_RTIPerftest {
                 } else if (language_cs.getSelection()) {
                     if (comboPlaform.getText().replaceAll("\\s+", "").contains("Linux")
                             || comboPlaform.getText().replaceAll("\\s+", "").contains("Darwin")) {
-                        show_error("You must specify a correct platform");
+                        show_error("You must specify a correct platform. C# is not compatible with Linux or Darwin");
                         return;
                     } else {
                         language = Language.cs;
@@ -934,6 +1026,11 @@ public class GUI_RTIPerftest {
                 } else {
                     mapParameter.put("-keyed", "");
                 }
+                if (!textInstances.getText().replaceAll("\\s+", "").equals("") && keyed.getSelection()) {
+                    mapParameter.put("-instances", " -instances " + textInstances.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-instances", "");
+                }
                 if (TCP.getSelection()) {
                     mapParameter.put("-enableTcp", " -enableTcp");
                 } else {
@@ -944,7 +1041,6 @@ public class GUI_RTIPerftest {
                 } else {
                     mapParameter.put("-enableSharedMemory", "");
                 }
-
                 if (!textDataLen.getText().replaceAll("\\s+", "").equals("")) {
                     mapParameter.put("-dataLen", " -dataLen " + textDataLen.getText().replaceAll("\\s+", ""));
                 } else {
@@ -959,6 +1055,42 @@ public class GUI_RTIPerftest {
                     mapParameter.put("-durability", " -durability " + listDurability.get(comboDurability.getText()));
                 } else {
                     mapParameter.put("-durability", "");
+                }
+                if (multicast.getSelection()) {
+                    mapParameter.put("-multicast", " -multicast");
+                } else {
+                    mapParameter.put("-multicast", "");
+                }
+                if (!textMulticast.getText().replaceAll("\\s+", "").equals("") && multicast.getSelection()) {
+                    mapParameter.put("-multicastAddress",
+                            " -multicastAddress " + textMulticast.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-multicastAddress", "");
+                }
+                if (!textNic.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-nic", " -nic " + textNic.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-nic", "");
+                }
+                if (!textInitalPeers.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-peer", " -peer " + textInitalPeers.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-peer", "");
+                }
+                if (useReadThread.getSelection()) {
+                    mapParameter.put("-useReadThread", " -useReadThread");
+                } else {
+                    mapParameter.put("-useReadThread", "");
+                }
+                if (cpu.getSelection()) {
+                    mapParameter.put("-cpu", " -cpu");
+                } else {
+                    mapParameter.put("-cpu", "");
+                }
+                if (!comboFlowController.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-flowController", " -flowController " + comboFlowController.getText());
+                } else {
+                    mapParameter.put("-flowController", "");
                 }
                 // TODO cleanInput(listOutput,listTextCompile);
                 if (!execute(textCommand, listOutput, language)) {
