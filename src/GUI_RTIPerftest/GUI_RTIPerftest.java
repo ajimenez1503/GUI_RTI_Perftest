@@ -162,6 +162,7 @@ public class GUI_RTIPerftest {
                 || get_paramenter("--platform").toLowerCase().contains("darwin")) {
             command = get_paramenter("Perftest") + "/build.sh" + command;
         } else {
+            show_error("You must specify a correct platform");
             return false;
         }
 
@@ -250,6 +251,7 @@ public class GUI_RTIPerftest {
                 break;
             }
         } else {
+            show_error("You must specify a correct platform");
             return false;
         }
 
@@ -343,6 +345,7 @@ public class GUI_RTIPerftest {
                 || get_paramenter("--platform").toLowerCase().contains("darwin")) {
             command = get_paramenter("Perftest") + "/build.sh --clean";
         } else {
+            show_error("You must specify a correct platform");
             return false;
         }
 
@@ -601,10 +604,7 @@ public class GUI_RTIPerftest {
                     mapParameter.put("--openssl-home", "");
                 }
                 // TODO cleanInput(listOutput,listTextCompile);
-                if (!compile(textCommand, listOutput)) {
-                    show_error("You must specify a correct platform");
-                    return;
-                }
+                compile(textCommand, listOutput);
             }
         });
 
@@ -619,10 +619,7 @@ public class GUI_RTIPerftest {
                 }
                 mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
                 // TODO cleanInput(listOutput,listTextCompile);
-                if (!compile_clean(textCommand, listOutput)) {
-                    show_error("You must specify a correct platform");
-                    return;
-                }
+                compile_clean(textCommand, listOutput);
             }
         });
     }
@@ -1288,10 +1285,7 @@ public class GUI_RTIPerftest {
                     mapParameter.put("-flowController", "");
                 }
                 // TODO cleanInput(listOutput,listTextCompile);
-                if (!execute(textCommand, listOutput, language)) {
-                    show_error("Error in the execution.");
-                    return;
-                }
+                execute(textCommand, listOutput, language);
             }
         });
 
