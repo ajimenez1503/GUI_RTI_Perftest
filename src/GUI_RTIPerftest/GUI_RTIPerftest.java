@@ -1,6 +1,7 @@
 package GUI_RTIPerftest;
 
 import org.eclipse.swt.SWT;
+
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.*;
@@ -14,6 +15,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Locale;
 import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class GUI_RTIPerftest {
 
@@ -76,6 +80,14 @@ public class GUI_RTIPerftest {
         } else {
             return mapParameter.get(parameter);
         }
+    }
+
+    /**
+     * Check is a path exists in the OS
+     */
+    private boolean path_exists(String path) {
+        Path folder = Paths.get(path);
+        return Files.exists(folder);
     }
 
     /**
@@ -252,6 +264,11 @@ public class GUI_RTIPerftest {
             }
         } else {
             show_error("You must specify a correct platform");
+            return false;
+        }
+
+        if (!path_exists(command)) {
+            show_error("The path '" + command + "' to execute perftest does not exists.");
             return false;
         }
 
@@ -435,34 +452,63 @@ public class GUI_RTIPerftest {
         groupGeneral.setLayout(new GridLayout(2, false));
         groupGeneral.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 3));
 
-        // Perftest path
-        Label labelPerftest = new Label(groupGeneral, SWT.NONE);
+        // PerftestPath
+        Group groupPerftestPath = new Group(groupGeneral, SWT.NONE);
+        groupPerftestPath.setLayout(new GridLayout(3, false));
+        groupPerftestPath.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 3, 1));
+        Label labelPerftest = new Label(groupPerftestPath, SWT.NONE);
         labelPerftest.setText("Perftest path");
         labelPerftest.setToolTipText("Path to the RTI perftest bundle");
-        Text textPerftest = new Text(groupGeneral, SWT.BORDER);
+        Text textPerftest = new Text(groupPerftestPath, SWT.BORDER);
         textPerftest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textPerftest);
-        textPerftest.setText("/home/ajimenez/github/rtiperftest_test"); // TODO
-                                                                        // delete
+        textPerftest.setText("/home/ajimenez/github/rtiperftest_test"); 
+        Button openPerftestPath = new Button(groupPerftestPath, SWT.PUSH);
+        openPerftestPath.setText("Open");
+        openPerftestPath.addSelectionListener(new SelectionAdapter() {
+            public void widgetSelected(SelectionEvent event) {
+                // User has selected to open a single file
+                DirectoryDialog dlgPerftestPath = new DirectoryDialog(shell, SWT.OPEN);
+                String folderPerftestPath = dlgPerftestPath.open();
+                if (folderPerftestPath != null) {
+                    textPerftest.setText(folderPerftestPath);
+                }
+            }
+        });
 
         // NDDSHOME
-        Label labelNDDSHOME = new Label(groupGeneral, SWT.NONE);
+        Group groupNDDSHOME = new Group(groupGeneral, SWT.NONE);
+        groupNDDSHOME.setLayout(new GridLayout(3, false));
+        groupNDDSHOME.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 3, 1));
+        Label labelNDDSHOME = new Label(groupNDDSHOME, SWT.NONE);
         labelNDDSHOME.setText("NDDSHOME");
         labelNDDSHOME.setToolTipText(
                 "Path to the RTI Connext DDS installation. If this parameter is not present, the $NDDSHOME variable should be.");
-        Text textNDDSHOME = new Text(groupGeneral, SWT.BORDER);
+        Text textNDDSHOME = new Text(groupNDDSHOME, SWT.BORDER);
         textNDDSHOME.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textNDDSHOME);
         textNDDSHOME.setText("/home/ajimenez/rti_connext_dds-5.2.7");
+        Button openNDDSHOME = new Button(groupNDDSHOME, SWT.PUSH);
+        openNDDSHOME.setText("Open");
+        openNDDSHOME.addSelectionListener(new SelectionAdapter() {
+            public void widgetSelected(SelectionEvent event) {
+                // User has selected to open a single file
+                DirectoryDialog dlgNDDSHOME = new DirectoryDialog(shell, SWT.OPEN);
+                String folderNDDSHOME = dlgNDDSHOME.open();
+                if (folderNDDSHOME != null) {
+                    textNDDSHOME.setText(folderNDDSHOME);
+                }
+            }
+        });
 
         // Platform
-        Label labelPlaform = new Label(groupGeneral, SWT.NONE);
-        labelPlaform.setText("Plaform");
-        labelPlaform.setToolTipText("Architecture/Platform for which build.sh is going to compile RTI Perftest.");
-        Combo comboPlaform = new Combo(groupGeneral, SWT.READ_ONLY);
-        comboPlaform.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        comboPlaform.setItems(possiblePlatform);
-        comboPlaform.setText(possiblePlatform[possiblePlatform.length - 1]);
+        Label labelPlatform = new Label(groupGeneral, SWT.NONE);
+        labelPlatform.setText("Platform");
+        labelPlatform.setToolTipText("Architecture/Platform for which build.sh is going to compile RTI Perftest.");
+        Combo comboPlatform = new Combo(groupGeneral, SWT.READ_ONLY);
+        comboPlatform.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        comboPlatform.setItems(possiblePlatform);
+        comboPlatform.setText(possiblePlatform[possiblePlatform.length - 1]);
 
         // four radio for the languages
         Group groupLanguage = new Group(compositeCompile, SWT.NONE);
@@ -497,7 +543,7 @@ public class GUI_RTIPerftest {
 
         // Security and OpenSSL
         Group groupSecurity = new Group(compositeCompile, SWT.NONE);
-        groupSecurity.setLayout(new GridLayout(3, false));
+        groupSecurity.setLayout(new GridLayout(4, false));
         groupSecurity.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
         groupSecurity.setText("Security");
         Label labelOpenSSL = new Label(groupSecurity, SWT.NONE);
@@ -507,6 +553,18 @@ public class GUI_RTIPerftest {
         Text textOpenSSL = new Text(groupSecurity, SWT.BORDER);
         textOpenSSL.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textOpenSSL);
+        Button openOpenSSL = new Button(groupSecurity, SWT.PUSH);
+        openOpenSSL.setText("Open");
+        openOpenSSL.addSelectionListener(new SelectionAdapter() {
+            public void widgetSelected(SelectionEvent event) {
+                // User has selected to open a single file
+                DirectoryDialog dlgOpenSSL = new DirectoryDialog(shell, SWT.OPEN);
+                String folderOpenSSL = dlgOpenSSL.open();
+                if (folderOpenSSL != null) {
+                    textOpenSSL.setText(folderOpenSSL);
+                }
+            }
+        });
         Button security = new Button(groupSecurity, SWT.CHECK);
         security.setToolTipText(
                 "Enable the compilation of the Perfest code specific for security and adds the RTI Connext DDS Security Libraries in the linking step (if compiling statically). ");
@@ -538,16 +596,28 @@ public class GUI_RTIPerftest {
                 if (textPerftest.getText().replaceAll("\\s+", "").equals("")) {
                     show_error("The path to the build of perftest is necessary.");
                     return;
+                } else {
+                    if (path_exists(textPerftest.getText().replaceAll("\\s+", ""))) {
+                        mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
+                    } else {
+                        show_error("The path '" + textPerftest.getText().replaceAll("\\s+", "")
+                                + "' to the build of perftest does not exists.");
+                        return;
+                    }
                 }
-                mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
-
                 if (!textNDDSHOME.getText().replaceAll("\\s+", "").equals("")) {
-                    mapParameter.put("--nddshome", " --nddshome " + textNDDSHOME.getText().replaceAll("\\s+", ""));
+                    if (path_exists(textNDDSHOME.getText().replaceAll("\\s+", ""))) {
+                        mapParameter.put("--nddshome", " --nddshome " + textNDDSHOME.getText().replaceAll("\\s+", ""));
+                    } else {
+                        show_error("The path '" + textNDDSHOME.getText().replaceAll("\\s+", "")
+                                + "' to the NDDSHOME does not exists.");
+                        return;
+                    }
                 } else {
                     mapParameter.put("--nddshome", "");
                 }
-                if (!comboPlaform.getText().replaceAll("\\s+", "").equals("")) {
-                    mapParameter.put("--platform", " --platform " + comboPlaform.getText().replaceAll("\\s+", ""));
+                if (!comboPlatform.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("--platform", " --platform " + comboPlatform.getText().replaceAll("\\s+", ""));
                 } else {
                     mapParameter.put("--platform", "");
                 }
@@ -593,9 +663,15 @@ public class GUI_RTIPerftest {
                 }
                 if (!textOpenSSL.getText().replaceAll("\\s+", "").equals("")) {
                     if (!linkerDynamic.getSelection() && security.getSelection()) {
-                        // static and secure
-                        mapParameter.put("--openssl-home",
-                                " --openssl-home " + textOpenSSL.getText().replaceAll("\\s+", ""));
+                        if (path_exists(textPerftest.getText().replaceAll("\\s+", ""))) {
+                            // static and secure
+                            mapParameter.put("--openssl-home",
+                                    " --openssl-home " + textOpenSSL.getText().replaceAll("\\s+", ""));
+                        } else {
+                            show_error("The path '" + textOpenSSL.getText().replaceAll("\\s+", "")
+                                    + "' to Open SSL does not exists.");
+                            return;
+                        }
                     } else {
                         show_error("OpenSSL needs when compiling using the secure option and statically linker.");
                         return;
@@ -616,6 +692,14 @@ public class GUI_RTIPerftest {
                 if (textPerftest.getText().replaceAll("\\s+", "").equals("")) {
                     show_error("The path to the build of perftest is necessary.");
                     return;
+                } else {
+                    if (path_exists(textPerftest.getText().replaceAll("\\s+", ""))) {
+                        mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
+                    } else {
+                        show_error("The path '" + textPerftest.getText().replaceAll("\\s+", "")
+                                + "' to the build of perftest does not exists.");
+                        return;
+                    }
                 }
                 mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
                 // TODO cleanInput(listOutput,listTextCompile);
@@ -932,40 +1016,63 @@ public class GUI_RTIPerftest {
         groupGeneral.setLayout(new GridLayout(4, false));
         groupGeneral.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 2));
 
-        // Perftest path
-        Label labelPerftest = new Label(groupGeneral, SWT.NONE);
+        // PerftestPath
+        Group groupPerftestPath = new Group(groupGeneral, SWT.NONE);
+        groupPerftestPath.setLayout(new GridLayout(3, false));
+        groupPerftestPath.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
+        Label labelPerftest = new Label(groupPerftestPath, SWT.NONE);
         labelPerftest.setText("Perftest path");
         labelPerftest.setToolTipText("Path to the RTI perftest bundle");
-        Text textPerftest = new Text(groupGeneral, SWT.BORDER);
+        Text textPerftest = new Text(groupPerftestPath, SWT.BORDER);
         textPerftest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textPerftest);
-        textPerftest.setText("/home/ajimenez/github/rtiperftest_test"); // TODO
-                                                                        // delete
+        textPerftest.setText("/home/ajimenez/github/rtiperftest_test");
+        Button openPerftestPath = new Button(groupPerftestPath, SWT.PUSH);
+        openPerftestPath.setText("Open");
+        openPerftestPath.addSelectionListener(new SelectionAdapter() {
+            public void widgetSelected(SelectionEvent event) {
+                // User has selected to open a single file
+                DirectoryDialog dlgPerftestPath = new DirectoryDialog(shell, SWT.OPEN);
+                String folderPerftestPath = dlgPerftestPath.open();
+                if (folderPerftestPath != null) {
+                    textPerftest.setText(folderPerftestPath);
+                }
+            }
+        });
 
         // two radio button for publisher or subscriber
-        Button pub = new Button(groupGeneral, SWT.RADIO);
+        Group groupPubSub = new Group(groupGeneral, SWT.NONE);
+        groupPubSub.setLayout(new GridLayout(2, false));
+        groupPubSub.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button pub = new Button(groupPubSub, SWT.RADIO);
         pub.setText("Run Publisher");
         pub.setToolTipText("Set test to be a publisher.");
         pub.setSelection(true);
-        Button sub = new Button(groupGeneral, SWT.RADIO);
+        Button sub = new Button(groupPubSub, SWT.RADIO);
         sub.setText("Run Subscriber");
         sub.setToolTipText("Set test to be a subscriber.");
 
         // Platform
-        Label labelPlaform = new Label(groupGeneral, SWT.NONE);
-        labelPlaform.setText("Plaform");
-        labelPlaform.setToolTipText("Architecture/Platform for which build.sh is going to compile RTI Perftest.");
-        Combo comboPlaform = new Combo(groupGeneral, SWT.READ_ONLY);
-        comboPlaform.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        comboPlaform.setItems(possiblePlatform);
-        comboPlaform.setText(possiblePlatform[possiblePlatform.length - 1]);
+        Group groupPlatform = new Group(groupGeneral, SWT.NONE);
+        groupPlatform.setLayout(new GridLayout(2, false));
+        groupPlatform.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelPlatform = new Label(groupPlatform, SWT.NONE);
+        labelPlatform.setText("Platform");
+        labelPlatform.setToolTipText("Architecture/Platform for which build.sh is going to compile RTI Perftest.");
+        Combo comboPlatform = new Combo(groupPlatform, SWT.READ_ONLY);
+        comboPlatform.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        comboPlatform.setItems(possiblePlatform);
+        comboPlatform.setText(possiblePlatform[possiblePlatform.length - 1]);
 
         // domain id
-        Label labelDomain = new Label(groupGeneral, SWT.NONE);
+        Group groupDomain = new Group(groupGeneral, SWT.NONE);
+        groupDomain.setLayout(new GridLayout(2, false));
+        groupDomain.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelDomain = new Label(groupDomain, SWT.NONE);
         labelDomain.setText("Domain");
         labelDomain.setToolTipText(
                 "The publisher and subscriber applications must use the same domain ID in order to communicate.");
-        Text textDomain = new Text(groupGeneral, SWT.BORDER);
+        Text textDomain = new Text(groupDomain, SWT.BORDER);
         textDomain.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textDomain);
         textDomain.setText("0");
@@ -1003,6 +1110,7 @@ public class GUI_RTIPerftest {
         Group groupKey = new Group(compositeExecution, SWT.NONE);
         groupKey.setLayout(new GridLayout(4, false));
         groupKey.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        groupKey.setText("Key data");
         Label labelInstances = new Label(groupKey, SWT.NONE);
         labelInstances.setText("Instances");
         labelInstances.setToolTipText(
@@ -1031,7 +1139,7 @@ public class GUI_RTIPerftest {
         Group groupTransport = new Group(compositeExecution, SWT.NONE);
         groupTransport.setLayout(new GridLayout(4, false));
         groupTransport.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
-        groupTransport.setText("Language to execute");
+        groupTransport.setText("Transport");
         Button UDP = new Button(groupTransport, SWT.RADIO);
         UDP.setText("UDP");
         UDP.setToolTipText("Enable the UDP transport.");
@@ -1062,6 +1170,7 @@ public class GUI_RTIPerftest {
         Combo comboDurability = new Combo(groupDurability, SWT.READ_ONLY);
         comboDurability.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         comboDurability.setItems((String[]) listDurability.keySet().toArray(new String[listDurability.size()]));
+        comboDurability.setText(listDurability.keySet().toArray(new String[listDurability.size()])[0]);
 
         // one CHECK button for the multicast and a label and input for
         // multicast address
@@ -1168,22 +1277,29 @@ public class GUI_RTIPerftest {
                 if (textPerftest.getText().replaceAll("\\s+", "").equals("")) {
                     show_error("The path to the build of perftest is necessary.");
                     return;
+                } else {
+                    if (path_exists(textPerftest.getText().replaceAll("\\s+", ""))) {
+                        mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
+                    } else {
+                        show_error("The path '" + textPerftest.getText().replaceAll("\\s+", "")
+                                + "' to the build of perftest does not exists.");
+                        return;
+                    }
                 }
-                mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
 
-                if (!language_java.getSelection() && comboPlaform.getText().replaceAll("\\s+", "").equals("")) {
+                if (!language_java.getSelection() && comboPlatform.getText().replaceAll("\\s+", "").equals("")) {
                     show_error("The platfomr of the execution is necessary.");
                     return;
                 } else {
-                    mapParameter.put("platform", comboPlaform.getText().replaceAll("\\s+", ""));
+                    mapParameter.put("platform", comboPlatform.getText().replaceAll("\\s+", ""));
                 }
                 if (language_cpp.getSelection()) {
                     language = Language.cpp;
                 } else if (language_cpp03.getSelection()) {
                     language = Language.cpp03;
                 } else if (language_cs.getSelection()) {
-                    if (comboPlaform.getText().replaceAll("\\s+", "").contains("Linux")
-                            || comboPlaform.getText().replaceAll("\\s+", "").contains("Darwin")) {
+                    if (comboPlatform.getText().replaceAll("\\s+", "").contains("Linux")
+                            || comboPlatform.getText().replaceAll("\\s+", "").contains("Darwin")) {
                         show_error("You must specify a correct platform. C# is not compatible with Linux or Darwin");
                         return;
                     } else {
@@ -1330,9 +1446,6 @@ public class GUI_RTIPerftest {
 
     @SuppressWarnings("unused")
     public static void main(String[] args) {
-        // System.out.println(SWT.getPlatform());
-        // System.out.println(SWT.getVersion());
-        // System.out.println(System.getProperty("os.name"));
         Display display = new Display();
         GUI_RTIPerftest ex = new GUI_RTIPerftest(display);
         display.dispose();
