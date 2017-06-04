@@ -253,8 +253,6 @@ public class GUI_RTIPerftest {
             return false;
         }
 
-        command += get_paramenter("-pub");
-        command += get_paramenter("-sub");
         command += get_paramenter("-domain");
         command += get_paramenter("-bestEffort");
         command += get_paramenter("-dataLen");
@@ -276,10 +274,26 @@ public class GUI_RTIPerftest {
         command += " -noXmlQos";// always use the QoS from the String
 
         // pub
+        command += get_paramenter("-pub");
+        command += get_paramenter("-batchSize");
+        command += get_paramenter("-enableAutoThrottle");
+        command += get_paramenter("-enableTurboMode");
         command += get_paramenter("-executionTime");
+        command += get_paramenter("-heartbeatPeriod");
+        command += get_paramenter("-latencyCount");
+        command += get_paramenter("-latencyTest");
+        command += get_paramenter("-numIter");
+        command += get_paramenter("-numSubscribers");
+        command += get_paramenter("-pidMultiPubTest");
         command += get_paramenter("-pubRate");
+        command += get_paramenter("-scan");
         command += get_paramenter("-sendQueueSize");
+        command += get_paramenter("-sleep");
+        command += get_paramenter("-spin");
+        command += get_paramenter("-writerStats");
+
         // Sub
+        command += get_paramenter("-sub");
         command += get_paramenter("-numPublishers");
         command += get_paramenter("-sidMultiSubTest");
 
@@ -414,31 +428,35 @@ public class GUI_RTIPerftest {
         compositeCompile.setLayout(new GridLayout(2, false));
         tabCompile.setControl(compositeCompile);
 
+        Group groupGeneral = new Group(compositeCompile, SWT.NONE);
+        groupGeneral.setLayout(new GridLayout(2, false));
+        groupGeneral.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 3));
+
         // Perftest path
-        Label labelPerftest = new Label(compositeCompile, SWT.NONE);
+        Label labelPerftest = new Label(groupGeneral, SWT.NONE);
         labelPerftest.setText("Perftest path");
         labelPerftest.setToolTipText("Path to the RTI perftest bundle");
-        Text textPerftest = new Text(compositeCompile, SWT.BORDER);
+        Text textPerftest = new Text(groupGeneral, SWT.BORDER);
         textPerftest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textPerftest);
         textPerftest.setText("/home/ajimenez/github/rtiperftest_test"); // TODO
                                                                         // delete
 
         // NDDSHOME
-        Label labelNDDSHOME = new Label(compositeCompile, SWT.NONE);
+        Label labelNDDSHOME = new Label(groupGeneral, SWT.NONE);
         labelNDDSHOME.setText("NDDSHOME");
         labelNDDSHOME.setToolTipText(
                 "Path to the RTI Connext DDS installation. If this parameter is not present, the $NDDSHOME variable should be.");
-        Text textNDDSHOME = new Text(compositeCompile, SWT.BORDER);
+        Text textNDDSHOME = new Text(groupGeneral, SWT.BORDER);
         textNDDSHOME.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textNDDSHOME);
         textNDDSHOME.setText("/home/ajimenez/rti_connext_dds-5.2.7");
 
         // Platform
-        Label labelPlaform = new Label(compositeCompile, SWT.NONE);
+        Label labelPlaform = new Label(groupGeneral, SWT.NONE);
         labelPlaform.setText("Plaform");
         labelPlaform.setToolTipText("Architecture/Platform for which build.sh is going to compile RTI Perftest.");
-        Combo comboPlaform = new Combo(compositeCompile, SWT.READ_ONLY);
+        Combo comboPlaform = new Combo(groupGeneral, SWT.READ_ONLY);
         comboPlaform.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         comboPlaform.setItems(possiblePlatform);
         comboPlaform.setText(possiblePlatform[possiblePlatform.length - 1]);
@@ -446,7 +464,7 @@ public class GUI_RTIPerftest {
         // four radio for the languages
         Group groupLanguage = new Group(compositeCompile, SWT.NONE);
         groupLanguage.setLayout(new GridLayout(4, true));
-        groupLanguage.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
+        groupLanguage.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         groupLanguage.setText("Language to compile");
         Button language_cpp = new Button(groupLanguage, SWT.CHECK);
         language_cpp.setText("CPP");
@@ -458,32 +476,38 @@ public class GUI_RTIPerftest {
         Button language_java = new Button(groupLanguage, SWT.CHECK);
         language_java.setText("JAVA");
 
-        // two radio button for the linker
-        Button linkerStatic = new Button(compositeCompile, SWT.RADIO);
+        // two radio button for the linker and one check for the debug
+        Group groupLinker = new Group(compositeCompile, SWT.NONE);
+        groupLinker.setLayout(new GridLayout(3, false));
+        groupLinker.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        groupLinker.setText("Linker");
+        Button linkerStatic = new Button(groupLinker, SWT.RADIO);
         linkerStatic.setText("Static linked");
         linkerStatic.setToolTipText("Compile using the RTI Connext DDS Static libraries.");
         linkerStatic.setSelection(true);
-        Button linkerDynamic = new Button(compositeCompile, SWT.RADIO);
+        Button linkerDynamic = new Button(groupLinker, SWT.RADIO);
         linkerDynamic.setToolTipText("Compile using the RTI Connext DDS Dynamic libraries.");
         linkerDynamic.setText("Dynamic linked");
-
-        // two checkboxs for security and debug
-        Button security = new Button(compositeCompile, SWT.CHECK);
-        security.setToolTipText(
-                "Enable the compilation of the Perfest code specific for security and adds the RTI Connext DDS Security Libraries in the linking step (if compiling statically). ");
-        security.setText("Enable security");
-        Button debug = new Button(compositeCompile, SWT.CHECK);
+        Button debug = new Button(groupLinker, SWT.CHECK);
         debug.setToolTipText("Compile using the RTI Connext DDS debug libraries.");
         debug.setText("Debug libraries");
 
-        // OpenSSL
-        Label labelOpenSSL = new Label(compositeCompile, SWT.NONE);
+        // Security and OpenSSL
+        Group groupSecurity = new Group(compositeCompile, SWT.NONE);
+        groupSecurity.setLayout(new GridLayout(3, false));
+        groupSecurity.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        groupSecurity.setText("Security");
+        Label labelOpenSSL = new Label(groupSecurity, SWT.NONE);
         labelOpenSSL.setText("Path to the openSSL");
         labelOpenSSL.setToolTipText(
                 "Path to the openSSL home directory. Needed when compiling using the --secure option and statically.");
-        Text textOpenSSL = new Text(compositeCompile, SWT.BORDER);
+        Text textOpenSSL = new Text(groupSecurity, SWT.BORDER);
         textOpenSSL.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textOpenSSL);
+        Button security = new Button(groupSecurity, SWT.CHECK);
+        security.setToolTipText(
+                "Enable the compilation of the Perfest code specific for security and adds the RTI Connext DDS Security Libraries in the linking step (if compiling statically). ");
+        security.setText("Enable security");
 
         // two buttons for compile and clean
         Button btnCompile = new Button(compositeCompile, SWT.PUSH);
@@ -632,7 +656,6 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textSidMultiSubTest);
         textSidMultiSubTest.setText("0");
 
-        shellAdvancedOptionSub.setSize(200, 100);
         shellAdvancedOptionSub.open();
         shellAdvancedOptionSub.pack();
         shellAdvancedOptionSub.addListener(SWT.Close, new Listener() {
@@ -663,27 +686,49 @@ public class GUI_RTIPerftest {
 
         Shell shellAdvancedOptionPub = new Shell(display, SWT.CLOSE);
         shellAdvancedOptionPub.setText("Subscriber Advanced Option");
-        shellAdvancedOptionPub.setLayout(new GridLayout(4, false));
+        shellAdvancedOptionPub.setLayout(new GridLayout(3, false));
 
-        // PubRate
-        Label labelPubRate = new Label(shellAdvancedOptionPub, SWT.NONE);
-        labelPubRate.setText("Publication Rate");
-        labelPubRate.setToolTipText("Limit the throughput to the specified number of samples per second.");
-        Text textPubRate = new Text(shellAdvancedOptionPub, SWT.BORDER);
-        textPubRate.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        listTextParameter.add(textPubRate);
+        // NumIter LatencyCount LatencyTest Scan writerStats
+        Group groupLatencyTest = new Group(shellAdvancedOptionPub, SWT.NONE);
+        groupLatencyTest.setLayout(new GridLayout(7, false));
+        groupLatencyTest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 3, 1));
+        Label labelNumIter = new Label(groupLatencyTest, SWT.NONE);
+        labelNumIter.setText("Number of samples");
+        labelNumIter.setToolTipText("Number of samples to send.");
+        Text textNumIter = new Text(groupLatencyTest, SWT.BORDER);
+        textNumIter.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textNumIter);
+        Label labelLatencyCount = new Label(groupLatencyTest, SWT.NONE);
+        labelLatencyCount.setText("Latency Count");
+        labelLatencyCount.setToolTipText("Number samples to send before a latency ping packet is sent.");
+        Text textLatencyCount = new Text(groupLatencyTest, SWT.BORDER);
+        textLatencyCount.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textLatencyCount);
+        Button latencyTest = new Button(groupLatencyTest, SWT.CHECK);
+        latencyTest.setText("Latency Test");
+        latencyTest.setToolTipText("Run a latency test consisting of a ping-pong.");
+        Button scan = new Button(groupLatencyTest, SWT.CHECK);
+        scan.setText("scan");
+        scan.setToolTipText("Run test in scan mode, traversing a range of sample data sizes from 32 to 63,000 bytes.");
+        Button writerStats = new Button(groupLatencyTest, SWT.CHECK);
+        writerStats.setText("writerStats");
+        writerStats.setToolTipText(
+                "Enable extra messages showing the Pulled Sample Count of the Writer in the Publisher side.");
 
-        // SendQueueSize
-        Label labelSendQueueSize = new Label(shellAdvancedOptionPub, SWT.NONE);
-        labelSendQueueSize.setText("Send Queue Size");
-        labelSendQueueSize.setToolTipText("Size of the send queue.");
-        Text textSendQueueSize = new Text(shellAdvancedOptionPub, SWT.BORDER);
-        textSendQueueSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        listTextParameter.add(textSendQueueSize);
+        // BatchSize
+        Group groupBatchSize = new Group(shellAdvancedOptionPub, SWT.NONE);
+        groupBatchSize.setLayout(new GridLayout(2, false));
+        groupBatchSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelBatchSize = new Label(groupBatchSize, SWT.NONE);
+        labelBatchSize.setText("Batch Size");
+        labelBatchSize.setToolTipText("Enable batching and set the maximum batched message size.");
+        Text textBatchSize = new Text(groupBatchSize, SWT.BORDER);
+        textBatchSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textBatchSize);
 
         // Execution Time
         Group groupExecuteionTime = new Group(shellAdvancedOptionPub, SWT.NONE);
-        groupExecuteionTime.setLayout(new GridLayout(4, false));
+        groupExecuteionTime.setLayout(new GridLayout(2, false));
         groupExecuteionTime.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelExecuteionTime = new Label(groupExecuteionTime, SWT.NONE);
         labelExecuteionTime.setText("Execution Time");
@@ -694,12 +739,98 @@ public class GUI_RTIPerftest {
         textExecuteionTime.setText("120");
         listTextParameter.add(textExecuteionTime);
 
+        // SendQueueSize
+        Group groupSendQueueSize = new Group(shellAdvancedOptionPub, SWT.NONE);
+        groupSendQueueSize.setLayout(new GridLayout(2, false));
+        groupSendQueueSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelSendQueueSize = new Label(groupSendQueueSize, SWT.NONE);
+        labelSendQueueSize.setText("Send Queue Size");
+        labelSendQueueSize.setToolTipText("Size of the send queue.");
+        Text textSendQueueSize = new Text(groupSendQueueSize, SWT.BORDER);
+        textSendQueueSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textSendQueueSize);
+
+        // HeartbeatPeriod
+        Group groupHeartbeatPeriod = new Group(shellAdvancedOptionPub, SWT.NONE);
+        groupHeartbeatPeriod.setLayout(new GridLayout(2, false));
+        groupHeartbeatPeriod.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelHeartbeatPeriod = new Label(groupHeartbeatPeriod, SWT.NONE);
+        labelHeartbeatPeriod.setText("Heartbeat Period");
+        labelHeartbeatPeriod.setToolTipText("The period at which the publishing application will send heartbeats.");
+        Text textHeartbeatPeriod = new Text(groupHeartbeatPeriod, SWT.BORDER);
+        textHeartbeatPeriod.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textHeartbeatPeriod.setText("0:10000000");
+        listTextParameter.add(textHeartbeatPeriod);
+
+        // two check button EnableAutoThrottle EnableTurboMode
+        Group groupEnableAutoThrottleEnableTurboMode = new Group(shellAdvancedOptionPub, SWT.NONE);
+        groupEnableAutoThrottleEnableTurboMode.setLayout(new GridLayout(2, false));
+        groupEnableAutoThrottleEnableTurboMode.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button enableAutoThrottle = new Button(groupEnableAutoThrottleEnableTurboMode, SWT.CHECK);
+        enableAutoThrottle.setText("EnableAutoThrottle");
+        enableAutoThrottle.setToolTipText("Enable the Auto Throttling feature.");
+        Button enableTurboMode = new Button(groupEnableAutoThrottleEnableTurboMode, SWT.CHECK);
+        enableTurboMode.setText("EnableTurboMode");
+        enableTurboMode.setToolTipText("Enables the Turbo Mode feature.");
+
+        // PidMultiPubTest
+        Group groupPidMultiPubTest = new Group(shellAdvancedOptionPub, SWT.NONE);
+        groupPidMultiPubTest.setLayout(new GridLayout(2, false));
+        groupPidMultiPubTest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelPidMultiPubTest = new Label(groupPidMultiPubTest, SWT.NONE);
+        labelPidMultiPubTest.setText("ID of Subscriber");
+        labelPidMultiPubTest.setToolTipText("ID of the subscriber in a multi-subscriber test.");
+        Text textPidMultiPubTest = new Text(groupPidMultiPubTest, SWT.BORDER);
+        textPidMultiPubTest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textPidMultiPubTest);
+        textPidMultiPubTest.setText("0");
+
+        // PubRate Sleep Spin
+        Group groupPubRate = new Group(shellAdvancedOptionPub, SWT.NONE);
+        groupPubRate.setLayout(new GridLayout(6, false));
+        groupPubRate.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        Label labelPubRate = new Label(groupPubRate, SWT.NONE);
+        labelPubRate.setText("Publication Rate");
+        labelPubRate.setToolTipText("Limit the throughput to the specified number of samples per second.");
+        Text textPubRate = new Text(groupPubRate, SWT.BORDER);
+        textPubRate.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textPubRate);
+        Label labelSleep = new Label(groupPubRate, SWT.NONE);
+        labelSleep.setText("Sleep");
+        labelSleep.setToolTipText("Time to sleep between each send.");
+        Text textSleep = new Text(groupPubRate, SWT.BORDER);
+        textSleep.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textSleep);
+        Label labelSpin = new Label(groupPubRate, SWT.NONE);
+        labelSpin.setText("Spin");
+        labelSpin.setToolTipText("Number of times to run in a spin loop between each send.");
+        Text textSpin = new Text(groupPubRate, SWT.BORDER);
+        textSpin.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textSpin);
+
+        // NumSubscribers
+        Group groupNumSubscribers = new Group(shellAdvancedOptionPub, SWT.NONE);
+        groupNumSubscribers.setLayout(new GridLayout(2, false));
+        groupNumSubscribers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelNumSubscribers = new Label(groupNumSubscribers, SWT.NONE);
+        labelNumSubscribers.setText("Number of Subscribers");
+        labelNumSubscribers.setToolTipText(
+                "The subscribing application will wait for this number of publishing applications to start.");
+        Text textNumSubscribers = new Text(groupNumSubscribers, SWT.BORDER);
+        textNumSubscribers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textNumSubscribers);
+        textNumSubscribers.setText("1");
+
         shellAdvancedOptionPub.open();
         shellAdvancedOptionPub.pack();
-        shellAdvancedOptionPub.setSize(400, 400);
         shellAdvancedOptionPub.addListener(SWT.Close, new Listener() {
             @Override
             public void handleEvent(Event event) {
+                if (!textBatchSize.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-batchSize", " -batchSize " + textBatchSize.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-batchSize", "");
+                }
                 if (!textPubRate.getText().replaceAll("\\s+", "").equals("")) {
                     mapParameter.put("-pubRate", " -pubRate " + textPubRate.getText().replaceAll("\\s+", ""));
                 } else {
@@ -716,6 +847,70 @@ public class GUI_RTIPerftest {
                             " -executionTime " + textExecuteionTime.getText().replaceAll("\\s+", ""));
                 } else {
                     mapParameter.put("-executionTime", "");
+                }
+                if (!textNumIter.getText().replaceAll("\\s+", "").equals("") && !scan.getSelection()) {
+                    mapParameter.put("-numIter", " -numIter " + textNumIter.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-numIter", "");
+                }
+                if (!textLatencyCount.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-latencyCount",
+                            " -latencyCount " + textLatencyCount.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-latencyCount", "");
+                }
+                if (latencyTest.getSelection() && textPidMultiPubTest.getText().replaceAll("\\s+", "").equals("0")) {
+                    mapParameter.put("-latencyTest", " -latencyTest");
+                } else {
+                    mapParameter.put("-latencyTest", "");
+                }
+                if (scan.getSelection()) {
+                    mapParameter.put("-scan", " -scan");
+                } else {
+                    mapParameter.put("-scan", "");
+                }
+                if (writerStats.getSelection()) {
+                    mapParameter.put("-writerStats", " -writerStats");
+                } else {
+                    mapParameter.put("-writerStats", "");
+                }
+                if (!textHeartbeatPeriod.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-heartbeatPeriod",
+                            " -heartbeatPeriod " + textHeartbeatPeriod.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-heartbeatPeriod", "");
+                }
+                if (enableAutoThrottle.getSelection()) {
+                    mapParameter.put("-enableAutoThrottle", " -enableAutoThrottle");
+                } else {
+                    mapParameter.put("-enableAutoThrottle", "");
+                }
+                if (enableTurboMode.getSelection()) {
+                    mapParameter.put("-enableTurboMode", " -enableTurboMode");
+                } else {
+                    mapParameter.put("-enableTurboMode", "");
+                }
+                if (!textPidMultiPubTest.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-pidMultiPubTest",
+                            " -pidMultiPubTest " + textPidMultiPubTest.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-pidMultiPubTest", "");
+                }
+                if (!textSleep.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-sleep", " -sleep " + textSleep.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-sleep", "");
+                }
+                if (!textSpin.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-spin", " -spin " + textSpin.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-spin", "");
+                }
+                if (!textNumSubscribers.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-numSubscribers",
+                            " -numSubscribers " + textNumSubscribers.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-numSubscribers", "");
                 }
                 shellAdvancedOptionPub.dispose();
             }
