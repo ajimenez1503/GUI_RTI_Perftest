@@ -10,9 +10,13 @@ import org.eclipse.swt.widgets.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
+import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Locale;
 import java.util.Arrays;
 import java.nio.file.Files;
@@ -396,6 +400,7 @@ public class GUI_RTIPerftest {
      */
     private void initUI(Display display) {
         shell.setLayout(new FillLayout());
+        display_menu();
         display_tab_compile(); // Tab 1 (compile)
         display_tab_execution(); // Tab 2 (execute)
         shell.open();
@@ -436,6 +441,91 @@ public class GUI_RTIPerftest {
         System.out.println(message);
     }
 
+    // TODO fix open an URL
+    /*    *//**
+             * Open URL in the default browser
+             * 
+             * @param urlString
+             *//*
+               * private void openWebpage(String urlString) { URL url; try { url
+               * = new URL(urlString); Desktop desktop =
+               * Desktop.isDesktopSupported() ? Desktop.getDesktop() : null; if
+               * (desktop != null && desktop.isSupported(Desktop.Action.BROWSE))
+               * { try { desktop.browse(url.toURI()); } catch (Exception e) {
+               * e.printStackTrace(); } } } catch (MalformedURLException e) {
+               * e.printStackTrace(); show_error("cannot display url: '" +
+               * urlString + "'"); return; } }
+               */
+
+    /**
+     * Display the menu with: exit, documentation Perftest, new window, help
+     * execution, help compile
+     *
+     */
+    private void display_menu() {
+
+        Menu menuBar = new Menu(shell, SWT.BAR);
+
+        // menu exit
+        Menu exitMenu = new Menu(shell, SWT.DROP_DOWN);
+        MenuItem exitMenuHeader = new MenuItem(menuBar, SWT.CASCADE);
+        exitMenuHeader.setText("&Menu");
+        exitMenuHeader.setMenu(exitMenu);
+        MenuItem itemNewWindow = new MenuItem(exitMenu, SWT.PUSH);
+        itemNewWindow.setText("&New Window");
+        itemNewWindow.addListener(SWT.Selection, new Listener() {
+            public void handleEvent(Event event) {
+                /*
+                 * Display newDisplay = new Display(); GUI_RTIPerftest
+                 * newGuiRtiPerftest = new GUI_RTIPerftest(newDisplay);
+                 * newDisplay.dispose();
+                 */
+                // TODO fix open a new window
+            }
+        });
+        MenuItem itemExit = new MenuItem(exitMenu, SWT.PUSH);
+        itemExit.setText("&Exit");
+        itemExit.addListener(SWT.Selection, new Listener() {
+            public void handleEvent(Event event) {
+                display.dispose();
+            }
+        });
+
+        // Menu help
+        Menu helpMenu = new Menu(shell, SWT.DROP_DOWN);
+        MenuItem helpMenuHeader = new MenuItem(menuBar, SWT.CASCADE);
+        helpMenuHeader.setText("&Help");
+        helpMenuHeader.setMenu(helpMenu);
+
+        // documentation RTI Perftest
+        MenuItem itemRTIPerftest = new MenuItem(helpMenu, SWT.PUSH);
+        itemRTIPerftest.setText("&Documentation RTI Perftest");
+        itemRTIPerftest.addListener(SWT.Selection, new Listener() {
+            public void handleEvent(Event event) {
+                // openWebpage("https://github.com/rticommunity/rtiperftest/wiki");
+            }
+        });
+
+        // documentation help execution
+        MenuItem itemHelpExecution = new MenuItem(helpMenu, SWT.PUSH);
+        itemHelpExecution.setText("&Help Execution");
+        itemHelpExecution.addListener(SWT.Selection, new Listener() {
+            public void handleEvent(Event event) {
+                // openWebpage("https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/md/test_parameters.md");
+            }
+        });
+
+        // documentation help compile
+        MenuItem itemHelpCompule = new MenuItem(helpMenu, SWT.PUSH);
+        itemHelpCompule.setText("&Help Compule");
+        itemHelpCompule.addListener(SWT.Selection, new Listener() {
+            public void handleEvent(Event event) {
+                // openWebpage("https://github.com/rticommunity/rtiperftest/blob/master/srcDoc/md/code_generation_and_compilation.md");
+            }
+        });
+
+    }
+
     /**
      * Display the tab of the compile
      *
@@ -462,7 +552,7 @@ public class GUI_RTIPerftest {
         Text textPerftest = new Text(groupPerftestPath, SWT.BORDER);
         textPerftest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textPerftest);
-        textPerftest.setText("/home/ajimenez/github/rtiperftest_test"); 
+        textPerftest.setText("/home/ajimenez/github/rtiperftest_test");
         Button openPerftestPath = new Button(groupPerftestPath, SWT.PUSH);
         openPerftestPath.setText("Open");
         openPerftestPath.addSelectionListener(new SelectionAdapter() {
@@ -1447,7 +1537,7 @@ public class GUI_RTIPerftest {
     @SuppressWarnings("unused")
     public static void main(String[] args) {
         Display display = new Display();
-        GUI_RTIPerftest ex = new GUI_RTIPerftest(display);
+        GUI_RTIPerftest GuiRtiPerftest = new GUI_RTIPerftest(display);
         display.dispose();
     }
 }
