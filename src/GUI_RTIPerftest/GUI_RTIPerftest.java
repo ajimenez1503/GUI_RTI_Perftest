@@ -44,23 +44,21 @@ public class GUI_RTIPerftest {
     private ArrayList<Text> listTextParameter; // create list of text elements
     private Map<String, String> mapParameter;// create dictionary with parameter
     private String[] possiblePlatform;
-    private Display display;
     private Map<String, String> listDurability;
     private String[] listFlowController;
 
     /**
      * Constructor
      */
-    public GUI_RTIPerftest(Display _display) {
-        display = _display;
+    public GUI_RTIPerftest() {
         set_all_possible_platform();
         listTextParameter = new ArrayList<Text>();
         set_listDurability();
         listFlowController = new String[] { "default", "10Gbps", "1Gbps" };
         mapParameter = new HashMap<String, String>();
-        shell = new Shell(display, SWT.SHELL_TRIM | SWT.CENTER);
+        shell = new Shell(Display.getCurrent(), SWT.SHELL_TRIM | SWT.CENTER);
         folder = new TabFolder(shell, SWT.NONE);
-        initUI(display);
+        initUI();
     }
 
     /**
@@ -393,11 +391,9 @@ public class GUI_RTIPerftest {
 
     /**
      * Run the GUI with two tabs
-     * 
-     * @param display
      *
      */
-    private void initUI(Display display) {
+    private void initUI() {
         shell.setLayout(new FillLayout());
         display_tab_compile(); // Tab 1 (compile)
         display_tab_execution(); // Tab 2 (execute)
@@ -421,8 +417,8 @@ public class GUI_RTIPerftest {
         });
 
         while (!shell.isDisposed()) {
-            if (!display.readAndDispatch()) {
-                display.sleep();
+            if (!shell.getDisplay().readAndDispatch()) {
+                shell.getDisplay().sleep();
             }
         }
     }
@@ -477,7 +473,7 @@ public class GUI_RTIPerftest {
                 }
             } catch (MalformedURLException e) {
                 e.printStackTrace();
-                show_error("cannot display url: '" + urlString + "'");
+                show_error("Cannot display url: '" + urlString + "'");
                 return;
             }
         }
@@ -503,15 +499,14 @@ public class GUI_RTIPerftest {
         itemNewWindow.setText("&New Window");
         itemNewWindow.addListener(SWT.Selection, new Listener() {
             public void handleEvent(Event event) {
-                GUI_RTIPerftest newGuiRtiPerftest = new GUI_RTIPerftest(display);
-                display.dispose();
+                new GUI_RTIPerftest();
             }
         });
         MenuItem itemExit = new MenuItem(exitMenu, SWT.PUSH);
         itemExit.setText("&Exit");
         itemExit.addListener(SWT.Selection, new Listener() {
             public void handleEvent(Event event) {
-                display.dispose();
+                shell.dispose();
             }
         });
 
@@ -795,7 +790,14 @@ public class GUI_RTIPerftest {
                     mapParameter.put("--openssl-home", "");
                 }
                 // TODO cleanInput(listOutput,listTextCompile);
-                compile(textCommand, listOutput);
+
+                shell.getDisplay().asyncExec(new Runnable() {
+                    @Override
+                    public void run() {
+                        compile(textCommand, listOutput);
+                    }
+                });
+
             }
         });
 
@@ -818,7 +820,13 @@ public class GUI_RTIPerftest {
                 }
                 mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
                 // TODO cleanInput(listOutput,listTextCompile);
-                compile_clean(textCommand, listOutput);
+                shell.getDisplay().asyncExec(new Runnable() {
+                    @Override
+                    public void run() {
+                        compile_clean(textCommand, listOutput);
+                    }
+                });
+
             }
         });
     }
@@ -829,7 +837,7 @@ public class GUI_RTIPerftest {
      */
     private void display_sub_advanced_option() {
 
-        Shell shellAdvancedOptionSub = new Shell(display, SWT.CLOSE);
+        Shell shellAdvancedOptionSub = new Shell(shell.getDisplay(), SWT.CLOSE);
         shellAdvancedOptionSub.setText("Subscriber Advanced Option");
         shellAdvancedOptionSub.setLayout(new GridLayout(2, false));
 
@@ -880,7 +888,7 @@ public class GUI_RTIPerftest {
      */
     private void display_pub_advanced_option() {
 
-        Shell shellAdvancedOptionPub = new Shell(display, SWT.CLOSE);
+        Shell shellAdvancedOptionPub = new Shell(shell.getDisplay(), SWT.CLOSE);
         shellAdvancedOptionPub.setText("Subscriber Advanced Option");
         shellAdvancedOptionPub.setLayout(new GridLayout(3, false));
 
@@ -1561,8 +1569,6 @@ public class GUI_RTIPerftest {
 
     @SuppressWarnings("unused")
     public static void main(String[] args) {
-        Display display = new Display();
-        GUI_RTIPerftest GuiRtiPerftest = new GUI_RTIPerftest(display);
-        display.dispose();
+        GUI_RTIPerftest GuiRtiPerftest = new GUI_RTIPerftest();
     }
 }
