@@ -6,6 +6,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.custom. StyledText;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -133,11 +134,11 @@ public class GUI_RTIPerftest {
     /**
      * Clean all the input. The List of output and the list of text
      * 
-     * @param listOutput
+     * @param outputTextField
      * @param texts
      */
-    private void cleanInput(List listOutput, ArrayList<Text> listText) {
-        listOutput.removeAll();
+    private void cleanInput( StyledText outputTextField, ArrayList<Text> listText) {
+        outputTextField.setText("");
         for (int i = 0; i < listText.size(); i++) {
             listText.get(i).setText("");
         }
@@ -147,12 +148,12 @@ public class GUI_RTIPerftest {
      * Run the command compile in the OS
      *
      * @param textCommand
-     * @param listOutput
+     * @param outputTextField
      *
      * @returns - True if the commands works, False if the OS is not found
      */
-    private Boolean compile(Text textCommand, List listOutput) {
-        listOutput.removeAll();
+    private Boolean compile(Text textCommand,  StyledText outputTextField) {
+        outputTextField.setText("");
         // create parameter
         String command = get_paramenter("--nddshome");
         command += get_paramenter("--platform");
@@ -190,16 +191,16 @@ public class GUI_RTIPerftest {
                 proc.waitFor();
             } catch (InterruptedException e) {
                 System.out.println(e.getMessage());
-                listOutput.add(e.getMessage());
+                outputTextField.append(e.getMessage() + "\n");
             }
             while (read.ready()) {
                 String output = read.readLine();
                 System.out.println(output);
-                listOutput.add(output);
+                outputTextField.append(output + "\n");
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
-            listOutput.add(e.getMessage());
+            outputTextField.append(e.getMessage() + "\n");
         }
         return true;
     }
@@ -208,12 +209,12 @@ public class GUI_RTIPerftest {
      * Run the command compile in the OS
      *
      * @param textCommand
-     * @param listOutput
+     * @param outputTextField
      *
      * @returns - True if the commands works, False if the OS is not found
      */
-    private Boolean execute(Text textCommand, List listOutput, Language language) {
-        listOutput.removeAll();
+    private Boolean execute(Text textCommand,  StyledText outputTextField, Language language) {
+        outputTextField.setText("");
         // create parameter
         String command = get_paramenter("Perftest") + "/bin/";
 
@@ -328,16 +329,16 @@ public class GUI_RTIPerftest {
                 proc.waitFor();
             } catch (InterruptedException e) {
                 System.out.println(e.getMessage());
-                listOutput.add(e.getMessage());
+                outputTextField.append(e.getMessage() + "\n");
             }
             while (read.ready()) {
                 String output = read.readLine();
                 System.out.println(output);
-                listOutput.add(output);
+                outputTextField.append(output + "\n");
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
-            listOutput.add(e.getMessage());
+            outputTextField.append(e.getMessage() + "\n");
         }
         return true;
     }
@@ -346,12 +347,12 @@ public class GUI_RTIPerftest {
      * Run the command compile --clean in the OS
      *
      * @param textCommand
-     * @param listOutput
+     * @param outputTextField
      *
      * @returns - True if the commands works, False if the OS is not found
      */
-    private Boolean compile_clean(Text textCommand, List listOutput) {
-        listOutput.removeAll();
+    private Boolean compile_clean(Text textCommand,  StyledText outputTextField) {
+        outputTextField.setText("");
         String command = "";
         // check if Linux or Win or Darwin
         if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
@@ -381,7 +382,7 @@ public class GUI_RTIPerftest {
             while (read.ready()) {
                 String output = read.readLine();
                 System.out.println(output);
-                listOutput.add(output);
+                outputTextField.append(output + "\n");
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
@@ -695,8 +696,8 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textCommand);
 
         // text output command
-        List listOutput = new List(compositeCompile, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
-        listOutput.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+         StyledText outputTextField = new  StyledText(compositeCompile, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+        outputTextField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 
         // listener button compile
         btnCompile.addSelectionListener(new SelectionAdapter() {
@@ -789,12 +790,12 @@ public class GUI_RTIPerftest {
                 } else {
                     mapParameter.put("--openssl-home", "");
                 }
-                // TODO cleanInput(listOutput,listTextCompile);
+                // TODO cleanInput(outputTextField,listTextCompile);
 
                 shell.getDisplay().asyncExec(new Runnable() {
                     @Override
                     public void run() {
-                        compile(textCommand, listOutput);
+                        compile(textCommand, outputTextField);
                     }
                 });
 
@@ -819,11 +820,11 @@ public class GUI_RTIPerftest {
                     }
                 }
                 mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
-                // TODO cleanInput(listOutput,listTextCompile);
+                // TODO cleanInput(outputTextField,listTextCompile);
                 shell.getDisplay().asyncExec(new Runnable() {
                     @Override
                     public void run() {
-                        compile_clean(textCommand, listOutput);
+                        compile_clean(textCommand, outputTextField);
                     }
                 });
 
@@ -1388,8 +1389,8 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textCommand);
 
         // text output command
-        List listOutput = new List(compositeExecution, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
-        listOutput.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1));
+         StyledText outputTextField = new  StyledText(compositeExecution, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+        outputTextField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1));
 
         // listener button compile
         btnExecute.addSelectionListener(new SelectionAdapter() {
@@ -1523,8 +1524,8 @@ public class GUI_RTIPerftest {
                 } else {
                     mapParameter.put("-flowController", "");
                 }
-                // TODO cleanInput(listOutput,listTextCompile);
-                execute(textCommand, listOutput, language);
+                // TODO cleanInput(outputTextField,listTextCompile);
+                execute(textCommand, outputTextField, language);
             }
         });
 
