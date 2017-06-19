@@ -6,7 +6,8 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
-import org.eclipse.swt.custom. StyledText;
+
+import org.eclipse.swt.custom.StyledText;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
@@ -23,7 +25,28 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.exec.LogOutputStream;
+import org.apache.commons.exec.PumpStreamHandler;
+
 public class GUI_RTIPerftest {
+
+    private static class StyledTextOutputStream extends LogOutputStream {
+        private StyledText outputControl;
+
+        public StyledTextOutputStream(StyledText outputControl) {
+            this.outputControl = outputControl;
+        }
+
+        @Override
+        protected void processLine(String line, int level) {
+            System.out.println(line);
+            //outputControl.append(line + "\n");
+        }
+    }
 
     /**
      * types of Operating Systems
@@ -137,7 +160,7 @@ public class GUI_RTIPerftest {
      * @param outputTextField
      * @param texts
      */
-    private void cleanInput( StyledText outputTextField, ArrayList<Text> listText) {
+    private void cleanInput(StyledText outputTextField, ArrayList<Text> listText) {
         outputTextField.setText("");
         for (int i = 0; i < listText.size(); i++) {
             listText.get(i).setText("");
@@ -152,10 +175,28 @@ public class GUI_RTIPerftest {
      *
      * @returns - True if the commands works, False if the OS is not found
      */
-    private Boolean compile(Text textCommand,  StyledText outputTextField) {
+    private Boolean compile(Text textCommand, StyledText outputTextField) {
         outputTextField.setText("");
         // create parameter
-        String command = get_paramenter("--nddshome");
+        String command = "";
+
+        // check if Linux or Win or Darwin
+        if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
+            command = "./build.sh";
+        } else if (getOperatingSystemType() == OSType.Windows
+                || get_paramenter("--platform").toLowerCase().contains("win")) {
+            command = "/build.bat";
+            command += get_paramenter("--skip-cs-build");
+            // C# just in win
+        } else if (getOperatingSystemType() == OSType.Darwin
+                || get_paramenter("--platform").toLowerCase().contains("darwin")) {
+            command = "./build.sh";
+        } else {
+            show_error("You must specify a correct platform");
+            return false;
+        }
+
+        command += get_paramenter("--nddshome");
         command += get_paramenter("--platform");
         command += get_paramenter("--skip-cpp-build");
         command += get_paramenter("--skip-cpp03-build");
@@ -164,45 +205,28 @@ public class GUI_RTIPerftest {
         command += get_paramenter("--secure");
         command += get_paramenter("--openssl-home");
 
-        // check if Linux or Win or Darwin
-        if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
-            command = get_paramenter("Perftest") + "/build.sh" + command;
-        } else if (getOperatingSystemType() == OSType.Windows
-                || get_paramenter("--platform").toLowerCase().contains("win")) {
-            command = get_paramenter("Perftest") + "/build.bat" + command;
-            command += get_paramenter("--skip-cs-build");
-            // C# just in win
-        } else if (getOperatingSystemType() == OSType.Darwin
-                || get_paramenter("--platform").toLowerCase().contains("darwin")) {
-            command = get_paramenter("Perftest") + "/build.sh" + command;
-        } else {
-            show_error("You must specify a correct platform");
-            return false;
-        }
-
-        // print command to run
+        // Print command to run
         System.out.println(command);
         textCommand.setText(command);
-
+        CommandLine cl = CommandLine.parse(command);
+        DefaultExecutor exec = new DefaultExecutor();
+        exec.setWorkingDirectory(new File(get_paramenter("Perftest")));
+        exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStream(outputTextField)));
+        exec.setWatchdog(new ExecuteWatchdog(30000));
         try {
-            Process proc = Runtime.getRuntime().exec(command);
-            BufferedReader read = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-            try {
-                proc.waitFor();
-            } catch (InterruptedException e) {
-                System.out.println(e.getMessage());
-                outputTextField.append(e.getMessage() + "\n");
+            int exitValue = exec.execute(cl);
+            if (exitValue != 0) {
+                show_error("Command line '" + command + "' returned non-zero value:" + exitValue);
+                return false;
             }
-            while (read.ready()) {
-                String output = read.readLine();
-                System.out.println(output);
-                outputTextField.append(output + "\n");
-            }
+            return true;
+        } catch (ExecuteException e) {
+            e.printStackTrace();
+            return false;
         } catch (IOException e) {
-            System.out.println(e.getMessage());
-            outputTextField.append(e.getMessage() + "\n");
+            e.printStackTrace();
+            return false;
         }
-        return true;
     }
 
     /**
@@ -213,10 +237,10 @@ public class GUI_RTIPerftest {
      *
      * @returns - True if the commands works, False if the OS is not found
      */
-    private Boolean execute(Text textCommand,  StyledText outputTextField, Language language) {
+    private Boolean execute(Text textCommand, StyledText outputTextField, Language language) {
         outputTextField.setText("");
         // create parameter
-        String command = get_paramenter("Perftest") + "/bin/";
+        String command = "./bin/";
 
         // check if Linux or Win or Darwin
         if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
@@ -269,8 +293,9 @@ public class GUI_RTIPerftest {
             return false;
         }
 
-        if (!path_exists(command)) {
-            show_error("The path '" + command + "' to execute perftest does not exists.");
+        if (!path_exists(command.replace("./", get_paramenter("Perftest") + "/"))) {
+            show_error("The path '" + command.replace("./", get_paramenter("Perftest") + "/")
+                    + "' to execute perftest does not exists.");
             return false;
         }
 
@@ -322,25 +347,25 @@ public class GUI_RTIPerftest {
         System.out.println(command);
         textCommand.setText(command);
 
+        CommandLine cl = CommandLine.parse(command);
+        DefaultExecutor exec = new DefaultExecutor();
+        exec.setWorkingDirectory(new File(get_paramenter("Perftest")));
+        exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStream(outputTextField)));
+        exec.setWatchdog(new ExecuteWatchdog(30000));
         try {
-            Process proc = Runtime.getRuntime().exec(command);
-            BufferedReader read = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-            try {
-                proc.waitFor();
-            } catch (InterruptedException e) {
-                System.out.println(e.getMessage());
-                outputTextField.append(e.getMessage() + "\n");
+            int exitValue = exec.execute(cl);
+            if (exitValue != 0) {
+                show_error("Command line '" + command + "' returned non-zero value:" + exitValue);
+                return false;
             }
-            while (read.ready()) {
-                String output = read.readLine();
-                System.out.println(output);
-                outputTextField.append(output + "\n");
-            }
+            return true;
+        } catch (ExecuteException e) {
+            e.printStackTrace();
+            return false;
         } catch (IOException e) {
-            System.out.println(e.getMessage());
-            outputTextField.append(e.getMessage() + "\n");
+            e.printStackTrace();
+            return false;
         }
-        return true;
     }
 
     /**
@@ -351,18 +376,19 @@ public class GUI_RTIPerftest {
      *
      * @returns - True if the commands works, False if the OS is not found
      */
-    private Boolean compile_clean(Text textCommand,  StyledText outputTextField) {
+    private Boolean compile_clean(Text textCommand, StyledText outputTextField) {
         outputTextField.setText("");
         String command = "";
+
         // check if Linux or Win or Darwin
         if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
-            command = get_paramenter("Perftest") + "/build.sh --clean";
+            command = "./build.sh --clean";
         } else if (getOperatingSystemType() == OSType.Windows
                 || get_paramenter("--platform").toLowerCase().contains("win")) {
-            command = get_paramenter("Perftest") + "/build.bat --clean";
+            command = "build.bat --clean";
         } else if (getOperatingSystemType() == OSType.Darwin
                 || get_paramenter("--platform").toLowerCase().contains("darwin")) {
-            command = get_paramenter("Perftest") + "/build.sh --clean";
+            command = "./build.sh --clean";
         } else {
             show_error("You must specify a correct platform");
             return false;
@@ -371,23 +397,26 @@ public class GUI_RTIPerftest {
         // print command to run
         System.out.println(command);
         textCommand.setText(command);
+
+        CommandLine cl = CommandLine.parse(command);
+        DefaultExecutor exec = new DefaultExecutor();
+        exec.setWorkingDirectory(new File(get_paramenter("Perftest")));
+        exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStream(outputTextField)));
+        exec.setWatchdog(new ExecuteWatchdog(30000));
         try {
-            Process proc = Runtime.getRuntime().exec(command);
-            BufferedReader read = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-            try {
-                proc.waitFor();
-            } catch (InterruptedException e) {
-                System.out.println(e.getMessage());
+            int exitValue = exec.execute(cl);
+            if (exitValue != 0) {
+                show_error("Command line '" + command + "' returned non-zero value:" + exitValue);
+                return false;
             }
-            while (read.ready()) {
-                String output = read.readLine();
-                System.out.println(output);
-                outputTextField.append(output + "\n");
-            }
+            return true;
+        } catch (ExecuteException e) {
+            e.printStackTrace();
+            return false;
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
+            return false;
         }
-        return true;
     }
 
     /**
@@ -696,7 +725,8 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textCommand);
 
         // text output command
-         StyledText outputTextField = new  StyledText(compositeCompile, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+        StyledText outputTextField = new StyledText(compositeCompile,
+                SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         outputTextField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 
         // listener button compile
@@ -1389,7 +1419,8 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textCommand);
 
         // text output command
-         StyledText outputTextField = new  StyledText(compositeExecution, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+        StyledText outputTextField = new StyledText(compositeExecution,
+                SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         outputTextField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1));
 
         // listener button compile
