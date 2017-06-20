@@ -43,9 +43,39 @@ public class GUI_RTIPerftest {
 
         @Override
         protected void processLine(String line, int level) {
-            System.out.println(line);
-            //outputControl.append(line + "\n");
+            final String lineCopy = line;
+            Display.getDefault().syncExec(new Runnable() {
+                public void run() {
+                    outputControl.append(lineCopy + "\n");
+                }
+            });
+            System.out.println(lineCopy);
         }
+    }
+
+    private void execute_command(String command, String workingDirectory, StyledText outputTextField) {
+        CommandLine cl = CommandLine.parse(command);
+        DefaultExecutor exec = new DefaultExecutor();
+        exec.setWorkingDirectory(new File(workingDirectory));
+        exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStream(outputTextField)));
+        exec.setWatchdog(new ExecuteWatchdog(30000));
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    int exitValue = exec.execute(cl);
+                    if (exitValue != 0) {
+                        // show_error("Command line '" + command + "' returned
+                        // non-zero value:" + exitValue);
+                    }
+                } catch (ExecuteException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }).start();
     }
 
     /**
@@ -208,25 +238,9 @@ public class GUI_RTIPerftest {
         // Print command to run
         System.out.println(command);
         textCommand.setText(command);
-        CommandLine cl = CommandLine.parse(command);
-        DefaultExecutor exec = new DefaultExecutor();
-        exec.setWorkingDirectory(new File(get_paramenter("Perftest")));
-        exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStream(outputTextField)));
-        exec.setWatchdog(new ExecuteWatchdog(30000));
-        try {
-            int exitValue = exec.execute(cl);
-            if (exitValue != 0) {
-                show_error("Command line '" + command + "' returned non-zero value:" + exitValue);
-                return false;
-            }
-            return true;
-        } catch (ExecuteException e) {
-            e.printStackTrace();
-            return false;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
+
+        execute_command(command, get_paramenter("Perftest"), outputTextField);
+        return true;
     }
 
     /**
@@ -237,7 +251,7 @@ public class GUI_RTIPerftest {
      *
      * @returns - True if the commands works, False if the OS is not found
      */
-    private Boolean execute(Text textCommand, StyledText outputTextField, Language language) {
+    private Boolean executePerftest(Text textCommand, StyledText outputTextField, Language language) {
         outputTextField.setText("");
         // create parameter
         String command = "./bin/";
@@ -347,25 +361,8 @@ public class GUI_RTIPerftest {
         System.out.println(command);
         textCommand.setText(command);
 
-        CommandLine cl = CommandLine.parse(command);
-        DefaultExecutor exec = new DefaultExecutor();
-        exec.setWorkingDirectory(new File(get_paramenter("Perftest")));
-        exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStream(outputTextField)));
-        exec.setWatchdog(new ExecuteWatchdog(30000));
-        try {
-            int exitValue = exec.execute(cl);
-            if (exitValue != 0) {
-                show_error("Command line '" + command + "' returned non-zero value:" + exitValue);
-                return false;
-            }
-            return true;
-        } catch (ExecuteException e) {
-            e.printStackTrace();
-            return false;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
+        execute_command(command, get_paramenter("Perftest"), outputTextField);
+        return true;
     }
 
     /**
@@ -397,26 +394,9 @@ public class GUI_RTIPerftest {
         // print command to run
         System.out.println(command);
         textCommand.setText(command);
+        execute_command(command, get_paramenter("Perftest"), outputTextField);
 
-        CommandLine cl = CommandLine.parse(command);
-        DefaultExecutor exec = new DefaultExecutor();
-        exec.setWorkingDirectory(new File(get_paramenter("Perftest")));
-        exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStream(outputTextField)));
-        exec.setWatchdog(new ExecuteWatchdog(30000));
-        try {
-            int exitValue = exec.execute(cl);
-            if (exitValue != 0) {
-                show_error("Command line '" + command + "' returned non-zero value:" + exitValue);
-                return false;
-            }
-            return true;
-        } catch (ExecuteException e) {
-            e.printStackTrace();
-            return false;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
+        return true;
     }
 
     /**
@@ -728,7 +708,6 @@ public class GUI_RTIPerftest {
         StyledText outputTextField = new StyledText(compositeCompile,
                 SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         outputTextField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
-
         // listener button compile
         btnCompile.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -821,13 +800,7 @@ public class GUI_RTIPerftest {
                     mapParameter.put("--openssl-home", "");
                 }
                 // TODO cleanInput(outputTextField,listTextCompile);
-
-                shell.getDisplay().asyncExec(new Runnable() {
-                    @Override
-                    public void run() {
-                        compile(textCommand, outputTextField);
-                    }
-                });
+                compile(textCommand, outputTextField);
 
             }
         });
@@ -851,13 +824,7 @@ public class GUI_RTIPerftest {
                 }
                 mapParameter.put("Perftest", textPerftest.getText().replaceAll("\\s+", ""));
                 // TODO cleanInput(outputTextField,listTextCompile);
-                shell.getDisplay().asyncExec(new Runnable() {
-                    @Override
-                    public void run() {
-                        compile_clean(textCommand, outputTextField);
-                    }
-                });
-
+                compile_clean(textCommand, outputTextField);
             }
         });
     }
@@ -1556,7 +1523,7 @@ public class GUI_RTIPerftest {
                     mapParameter.put("-flowController", "");
                 }
                 // TODO cleanInput(outputTextField,listTextCompile);
-                execute(textCommand, outputTextField, language);
+                executePerftest(textCommand, outputTextField, language);
             }
         });
 
