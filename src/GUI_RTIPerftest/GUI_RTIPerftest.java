@@ -36,20 +36,30 @@ public class GUI_RTIPerftest {
 
     private static class StyledTextOutputStream extends LogOutputStream {
         private StyledText outputControl;
+        private String[][] replacements;
 
         public StyledTextOutputStream(StyledText outputControl) {
             this.outputControl = outputControl;
+            this.replacements = new String[][] {
+                    {"\033[0;31m", ""}, 
+                    {"\033[0;32m", ""},
+                    {"\033[0;33m", ""},
+                    {"\033[0m", ""}
+            };
         }
 
         @Override
         protected void processLine(String line, int level) {
-            final String lineCopy = line;
             Display.getDefault().syncExec(new Runnable() {
                 public void run() {
+                    String lineCopy = line;
+                    for(String[] replacement: replacements) {
+                        lineCopy = lineCopy.replace(replacement[0], replacement[1]);
+                    }
                     outputControl.append(lineCopy + "\n");
                 }
             });
-            System.out.println(lineCopy);
+            System.out.println(line);
         }
     }
 
