@@ -4,6 +4,8 @@ import org.eclipse.swt.SWT;
 
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
@@ -34,14 +36,24 @@ import org.apache.commons.exec.PumpStreamHandler;
 
 public class GUI_RTIPerftest {
 
-    private static class StyledTextOutputStream extends LogOutputStream {
+    private static class StyledTextOutputStreamCompile extends LogOutputStream {
         private StyledText outputControl;
         private String[][] replacements;
+        private Map<String, Color> colors;// create dictionary with parameter
 
-        public StyledTextOutputStream(StyledText outputControl) {
-            this.outputControl = outputControl;
-            this.replacements = new String[][] { { "\033[0;31m", "" }, { "\033[0;32m", "" }, { "\033[0;33m", "" },
-                    { "\033[0m", "" } };
+        private int c;
+
+        public StyledTextOutputStreamCompile(StyledText _outputControl) {
+            outputControl = _outputControl;
+            colors = new HashMap<String, Color>();
+            colors.put("[ERROR]:", Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
+            colors.put("[INFO]:", Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
+            colors.put("\033[0;31m", Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
+            colors.put("\033[0;32m", Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
+            colors.put("\033[0;33m", Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
+            colors.put("\033[0m", Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
+            c = 0;
+
         }
 
         @Override
@@ -49,9 +61,37 @@ public class GUI_RTIPerftest {
             Display.getDefault().syncExec(new Runnable() {
                 public void run() {
                     String lineCopy = line;
-                    for (String[] replacement : replacements) {
-                        lineCopy = lineCopy.replace(replacement[0], replacement[1]);
+                    Color specific_color = null;
+                    for(Map.Entry<String, Color> color : colors.entrySet()){
+                        if (lineCopy.contains(color.getKey())) {
+                            lineCopy = lineCopy.replace(color.getKey(), "");
+                            specific_color = color.getValue();
+                        }
                     }
+                    outputControl.append(lineCopy + "\n");
+                    if (specific_color != null) {
+                        outputControl.setLineBackground(c, 1, specific_color);
+                    }
+                    c++;
+                }
+            });
+            System.out.println(line);
+        }
+    }
+    
+    private static class StyledTextOutputStreamExecution extends LogOutputStream {
+        private StyledText outputControl;
+
+
+        public StyledTextOutputStreamExecution(StyledText _outputControl) {
+            outputControl = _outputControl;
+        }
+
+        @Override
+        protected void processLine(String line, int level) {
+            Display.getDefault().syncExec(new Runnable() {
+                public void run() {
+                    String lineCopy = line;
                     outputControl.append(lineCopy + "\n");
                 }
             });
@@ -59,11 +99,15 @@ public class GUI_RTIPerftest {
         }
     }
 
-    private void execute_command(String command, String workingDirectory, StyledText outputTextField) {
+    private void execute_command(String command, String workingDirectory, StyledText outputTextField, ExecutionType executionType) {
         CommandLine cl = CommandLine.parse(command);
         DefaultExecutor exec = new DefaultExecutor();
         exec.setWorkingDirectory(new File(workingDirectory));
-        exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStream(outputTextField)));
+        if (executionType == ExecutionType.Compile){
+            exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamCompile(outputTextField)));
+        } else { //if (executionType == ExecutionType.Pub && executionType == ExecutionType.Sub){
+            exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamExecution(outputTextField)));
+        }
         exec.setWatchdog(new ExecuteWatchdog(30000));
         new Thread(new Runnable() {
             @Override
@@ -75,14 +119,23 @@ public class GUI_RTIPerftest {
                         // non-zero value:" + exitValue);
                     }
                 } catch (ExecuteException e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
+                    System.out.println(e.toString());
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
+                    System.out.println(e.toString());
                 }
             }
 
         }).start();
     }
+    
+    /**
+     * types of Execution
+     */
+    private enum ExecutionType {
+        Compile, Pub, Sub
+    };
 
     /**
      * types of Operating Systems
@@ -245,7 +298,7 @@ public class GUI_RTIPerftest {
         System.out.println(command);
         textCommand.setText(command);
 
-        execute_command(command, get_paramenter("Perftest"), outputTextField);
+        execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Compile);
         return true;
     }
 
@@ -366,8 +419,11 @@ public class GUI_RTIPerftest {
         // print command to run
         System.out.println(command);
         textCommand.setText(command);
-
-        execute_command(command, get_paramenter("Perftest"), outputTextField);
+        if (!get_paramenter("-pub").isEmpty()) {
+            execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Pub);
+        } else { // if (!get_paramenter("-sub").isEmpty()) {
+            execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Sub);
+        }
         return true;
     }
 
@@ -400,7 +456,7 @@ public class GUI_RTIPerftest {
         // print command to run
         System.out.println(command);
         textCommand.setText(command);
-        execute_command(command, get_paramenter("Perftest"), outputTextField);
+        execute_command(command, get_paramenter("Perftest"), outputTextField,ExecutionType.Compile);
 
         return true;
     }
@@ -724,6 +780,7 @@ public class GUI_RTIPerftest {
         StyledText outputTextField = new StyledText(compositeCompile,
                 SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         outputTextField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        outputTextField.setFont(new Font(shell.getDisplay(), "Courier New", 12, SWT.NORMAL));
         // listener button compile
         btnCompile.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -1142,7 +1199,7 @@ public class GUI_RTIPerftest {
     private void display_execution_advanced_option() {
 
         Shell shellAdvancedOptionExecution = new Shell(shell.getDisplay(), SWT.CLOSE);
-        shellAdvancedOptionExecution.setText("Subscriber Advanced Option");
+        shellAdvancedOptionExecution.setText("Advanced Option");
         shellAdvancedOptionExecution.setLayout(new GridLayout(4, false));
 
         // Date Length
