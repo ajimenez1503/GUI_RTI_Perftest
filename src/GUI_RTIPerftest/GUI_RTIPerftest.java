@@ -40,12 +40,8 @@ public class GUI_RTIPerftest {
 
         public StyledTextOutputStream(StyledText outputControl) {
             this.outputControl = outputControl;
-            this.replacements = new String[][] {
-                    {"\033[0;31m", ""}, 
-                    {"\033[0;32m", ""},
-                    {"\033[0;33m", ""},
-                    {"\033[0m", ""}
-            };
+            this.replacements = new String[][] { { "\033[0;31m", "" }, { "\033[0;32m", "" }, { "\033[0;33m", "" },
+                    { "\033[0m", "" } };
         }
 
         @Override
@@ -53,7 +49,7 @@ public class GUI_RTIPerftest {
             Display.getDefault().syncExec(new Runnable() {
                 public void run() {
                     String lineCopy = line;
-                    for(String[] replacement: replacements) {
+                    for (String[] replacement : replacements) {
                         lineCopy = lineCopy.replace(replacement[0], replacement[1]);
                     }
                     outputControl.append(lineCopy + "\n");
@@ -680,11 +676,14 @@ public class GUI_RTIPerftest {
         labelOpenSSL.setText("Path to the openSSL");
         labelOpenSSL.setToolTipText(
                 "Path to the openSSL home directory. Needed when compiling using the --secure option and statically.");
+        labelOpenSSL.setEnabled(false);
         Text textOpenSSL = new Text(groupSecurity, SWT.BORDER);
         textOpenSSL.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textOpenSSL.setEnabled(false);
         listTextParameter.add(textOpenSSL);
         Button openOpenSSL = new Button(groupSecurity, SWT.PUSH);
         openOpenSSL.setText("Open");
+        openOpenSSL.setEnabled(false);
         openOpenSSL.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent event) {
                 // User has selected to open a single file
@@ -699,6 +698,13 @@ public class GUI_RTIPerftest {
         security.setToolTipText(
                 "Enable the compilation of the Perfest code specific for security and adds the RTI Connext DDS Security Libraries in the linking step (if compiling statically). ");
         security.setText("Enable security");
+        security.addSelectionListener(new SelectionAdapter() {
+            public void widgetSelected(SelectionEvent event) {
+                labelOpenSSL.setEnabled(security.getSelection());
+                textOpenSSL.setEnabled(security.getSelection());
+                openOpenSSL.setEnabled(security.getSelection());
+            }
+        });
 
         // two buttons for compile and clean
         Button btnCompile = new Button(compositeCompile, SWT.PUSH);
@@ -1130,6 +1136,204 @@ public class GUI_RTIPerftest {
     }
 
     /**
+     * Display new window with the Advanced Option of the Subscriber
+     *
+     */
+    private void display_execution_advanced_option() {
+
+        Shell shellAdvancedOptionExecution = new Shell(shell.getDisplay(), SWT.CLOSE);
+        shellAdvancedOptionExecution.setText("Subscriber Advanced Option");
+        shellAdvancedOptionExecution.setLayout(new GridLayout(4, false));
+
+        // Date Length
+        Group groupDataLen = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        groupDataLen.setLayout(new GridLayout(4, false));
+        groupDataLen.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelDataLen = new Label(groupDataLen, SWT.NONE);
+        labelDataLen.setText("Data Length");
+        labelDataLen.setToolTipText("Length of payload in bytes for each send.");
+        Text textDataLen = new Text(groupDataLen, SWT.BORDER);
+        textDataLen.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textDataLen);
+        textDataLen.setText("100");
+
+        // Three radio for the transport
+        Group groupTransport = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        groupTransport.setLayout(new GridLayout(4, false));
+        groupTransport.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        groupTransport.setText("Transport");
+        Button UDP = new Button(groupTransport, SWT.RADIO);
+        UDP.setText("UDP");
+        UDP.setToolTipText("Enable the UDP transport.");
+        UDP.setSelection(true);
+        Button shareMemory = new Button(groupTransport, SWT.RADIO);
+        shareMemory.setText("Share Memory");
+        shareMemory.setToolTipText("Enable the Share Memory transport.");
+        Button TCP = new Button(groupTransport, SWT.RADIO);
+        TCP.setText("TCP");
+        TCP.setToolTipText("Enable the TCP transport.");
+
+        // check button for the dynamic
+        Group groupDynamic = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        groupDynamic.setLayout(new GridLayout(4, false));
+        groupDynamic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button dynamic = new Button(groupDynamic, SWT.CHECK);
+        dynamic.setText("Use Dynamic data API");
+        dynamic.setSelection(false);
+        dynamic.setToolTipText("Run using the Dynamic Data API functions instead of the rtiddsgen generated calls.");
+
+        // Combo Durability
+        Group groupDurability = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        groupDurability.setLayout(new GridLayout(2, false));
+        groupDurability.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelDurability = new Label(groupDurability, SWT.NONE);
+        labelDurability.setText("Durability");
+        labelDurability.setToolTipText("Sets the Durability kind");
+        Combo comboDurability = new Combo(groupDurability, SWT.READ_ONLY);
+        comboDurability.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        comboDurability.setItems((String[]) listDurability.keySet().toArray(new String[listDurability.size()]));
+        comboDurability.setText(listDurability.keySet().toArray(new String[listDurability.size()])[0]);
+
+        // one CHECK button for the multicast and a label and input for
+        // multicast address
+        Group groupMulticast = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        groupMulticast.setLayout(new GridLayout(3, false));
+        groupMulticast.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        Button multicast = new Button(groupMulticast, SWT.CHECK);
+        multicast.setToolTipText(
+                "Use multicast to receive data. In addition, the Datawriter heartbeats will be sent using multicast instead of unicast.");
+        multicast.setText("Multicast");
+        multicast.setSelection(false);
+        Label labelMulticast = new Label(groupMulticast, SWT.NONE);
+        labelMulticast.setText(" Address");
+        labelMulticast.setToolTipText("Specify the multicast receive address for receiving user data.");
+        Text textMulticast = new Text(groupMulticast, SWT.BORDER);
+        textMulticast.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textMulticast);
+
+        // Nic
+        Group groupNic = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        groupNic.setLayout(new GridLayout(2, false));
+        groupNic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelNic = new Label(groupNic, SWT.NONE);
+        labelNic.setText("Nic");
+        labelNic.setToolTipText(
+                "Restrict RTI Connext DDS to sending output through this interface. This can be the IP address of any available network interface on the machine.");
+        Text textNic = new Text(groupNic, SWT.BORDER);
+        textNic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textNic);
+
+        // check button for the useReadThread and for CPU
+        Group groupUseReadThreadAndCpu = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        groupUseReadThreadAndCpu.setLayout(new GridLayout(2, false));
+        groupUseReadThreadAndCpu.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
+        Button useReadThread = new Button(groupUseReadThreadAndCpu, SWT.CHECK);
+        useReadThread.setText("Use Read Thread");
+        useReadThread.setSelection(false);
+        useReadThread.setToolTipText("Use a separate thread (instead of a callback) to read data.");
+        Button cpu = new Button(groupUseReadThreadAndCpu, SWT.CHECK);
+        cpu.setText("CPU");
+        cpu.setSelection(false);
+        cpu.setToolTipText("Display the cpu used by the RTI Perftest process.");
+
+        // Combo FlowController
+        Group groupFlowController = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        groupFlowController.setLayout(new GridLayout(2, false));
+        groupFlowController.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        Label labelFlowController = new Label(groupFlowController, SWT.NONE);
+        labelFlowController.setText("Flow Controller");
+        labelFlowController.setToolTipText(
+                "Specify the name of the flow controller that will be used by the DataWriters. This will only have effect if the DataWriter uses Asynchronous Publishing either because it is using samples greater than 63000 Bytes or because the -asynchronous option is present.");
+        Combo comboFlowController = new Combo(groupFlowController, SWT.READ_ONLY);
+        comboFlowController.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        comboFlowController.setItems(listFlowController);
+        comboFlowController.setText(listFlowController[0]);
+
+        // Initial peers
+        // TODO add several initials peers, like a list
+        Group groupInitalPeers = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        groupInitalPeers.setLayout(new GridLayout(2, false));
+        groupInitalPeers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Label labelInitalPeers = new Label(groupInitalPeers, SWT.NONE);
+        labelInitalPeers.setText("Inital Peers");
+        labelInitalPeers.setToolTipText(
+                "Adds a peer to the peer host address list. This argument may be repeated to indicate multiple peers.");
+        Text textInitalPeers = new Text(groupInitalPeers, SWT.BORDER);
+        textInitalPeers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        listTextParameter.add(textInitalPeers);
+
+        shellAdvancedOptionExecution.open();
+        shellAdvancedOptionExecution.pack();
+        shellAdvancedOptionExecution.addListener(SWT.Close, new Listener() {
+            @Override
+            public void handleEvent(Event event) {
+                if (TCP.getSelection()) {
+                    mapParameter.put("-enableTcp", " -enableTcp");
+                } else {
+                    mapParameter.put("-enableTcp", "");
+                }
+                if (shareMemory.getSelection()) {
+                    mapParameter.put("-enableSharedMemory", " -enableSharedMemory");
+                } else {
+                    mapParameter.put("-enableSharedMemory", "");
+                }
+                if (!textDataLen.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-dataLen", " -dataLen " + textDataLen.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-dataLen", "");
+                }
+                if (dynamic.getSelection()) {
+                    mapParameter.put("-dynamicData", " -dynamicData ");
+                } else {
+                    mapParameter.put("-dynamicData", "");
+                }
+                if (!comboDurability.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-durability", " -durability " + listDurability.get(comboDurability.getText()));
+                } else {
+                    mapParameter.put("-durability", "");
+                }
+                if (multicast.getSelection()) {
+                    mapParameter.put("-multicast", " -multicast");
+                } else {
+                    mapParameter.put("-multicast", "");
+                }
+                if (!textMulticast.getText().replaceAll("\\s+", "").equals("") && multicast.getSelection()) {
+                    mapParameter.put("-multicastAddress",
+                            " -multicastAddress " + textMulticast.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-multicastAddress", "");
+                }
+                if (!textNic.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-nic", " -nic " + textNic.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-nic", "");
+                }
+                if (!textInitalPeers.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-peer", " -peer " + textInitalPeers.getText().replaceAll("\\s+", ""));
+                } else {
+                    mapParameter.put("-peer", "");
+                }
+                if (useReadThread.getSelection()) {
+                    mapParameter.put("-useReadThread", " -useReadThread");
+                } else {
+                    mapParameter.put("-useReadThread", "");
+                }
+                if (cpu.getSelection()) {
+                    mapParameter.put("-cpu", " -cpu");
+                } else {
+                    mapParameter.put("-cpu", "");
+                }
+                if (!comboFlowController.getText().replaceAll("\\s+", "").equals("")) {
+                    mapParameter.put("-flowController", " -flowController " + comboFlowController.getText());
+                } else {
+                    mapParameter.put("-flowController", "");
+                }
+                shellAdvancedOptionExecution.dispose();
+            }
+        });
+    }
+
+    /**
      * Display the execution tab with all the parameter. However we have a list
      * of parameter which are not added: verbosity, instanceHashBuckets,
      * keepDurationUsec, noDirectCommunication, noPositiveAcks,
@@ -1254,130 +1458,16 @@ public class GUI_RTIPerftest {
         keyed.setText("keyed");
         keyed.setToolTipText("Specify the use of a keyed type.");
 
-        // Date Length
-        Group groupDataLen = new Group(compositeExecution, SWT.NONE);
-        groupDataLen.setLayout(new GridLayout(4, false));
-        groupDataLen.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        Label labelDataLen = new Label(groupDataLen, SWT.NONE);
-        labelDataLen.setText("Data Length");
-        labelDataLen.setToolTipText("Length of payload in bytes for each send.");
-        Text textDataLen = new Text(groupDataLen, SWT.BORDER);
-        textDataLen.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        listTextParameter.add(textDataLen);
-        textDataLen.setText("100");
-
-        // three radio for the transport
-        Group groupTransport = new Group(compositeExecution, SWT.NONE);
-        groupTransport.setLayout(new GridLayout(4, false));
-        groupTransport.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
-        groupTransport.setText("Transport");
-        Button UDP = new Button(groupTransport, SWT.RADIO);
-        UDP.setText("UDP");
-        UDP.setToolTipText("Enable the UDP transport.");
-        UDP.setSelection(true);
-        Button shareMemory = new Button(groupTransport, SWT.RADIO);
-        shareMemory.setText("Share Memory");
-        shareMemory.setToolTipText("Enable the Share Memory transport.");
-        Button TCP = new Button(groupTransport, SWT.RADIO);
-        TCP.setText("TCP");
-        TCP.setToolTipText("Enable the TCP transport.");
-
-        // check button for the dynamic
-        Group groupDynamic = new Group(compositeExecution, SWT.NONE);
-        groupDynamic.setLayout(new GridLayout(4, false));
-        groupDynamic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        Button dynamic = new Button(groupDynamic, SWT.CHECK);
-        dynamic.setText("Use Dynamic data API");
-        dynamic.setSelection(false);
-        dynamic.setToolTipText("Run using the Dynamic Data API functions instead of the rtiddsgen generated calls.");
-
-        // Combo Durability
-        Group groupDurability = new Group(compositeExecution, SWT.NONE);
-        groupDurability.setLayout(new GridLayout(2, false));
-        groupDurability.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        Label labelDurability = new Label(groupDurability, SWT.NONE);
-        labelDurability.setText("Durability");
-        labelDurability.setToolTipText("Sets the Durability kind");
-        Combo comboDurability = new Combo(groupDurability, SWT.READ_ONLY);
-        comboDurability.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        comboDurability.setItems((String[]) listDurability.keySet().toArray(new String[listDurability.size()]));
-        comboDurability.setText(listDurability.keySet().toArray(new String[listDurability.size()])[0]);
-
-        // one CHECK button for the multicast and a label and input for
-        // multicast address
-        Group groupMulticast = new Group(compositeExecution, SWT.NONE);
-        groupMulticast.setLayout(new GridLayout(3, false));
-        groupMulticast.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
-        Button multicast = new Button(groupMulticast, SWT.CHECK);
-        multicast.setToolTipText(
-                "Use multicast to receive data. In addition, the Datawriter heartbeats will be sent using multicast instead of unicast.");
-        multicast.setText("Multicast");
-        multicast.setSelection(false);
-        Label labelMulticast = new Label(groupMulticast, SWT.NONE);
-        labelMulticast.setText(" Address");
-        labelMulticast.setToolTipText("Specify the multicast receive address for receiving user data.");
-        Text textMulticast = new Text(groupMulticast, SWT.BORDER);
-        textMulticast.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        listTextParameter.add(textMulticast);
-
-        // Nic
-        Group groupNic = new Group(compositeExecution, SWT.NONE);
-        groupNic.setLayout(new GridLayout(2, false));
-        groupNic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        Label labelNic = new Label(groupNic, SWT.NONE);
-        labelNic.setText("Nic");
-        labelNic.setToolTipText(
-                "Restrict RTI Connext DDS to sending output through this interface. This can be the IP address of any available network interface on the machine.");
-        Text textNic = new Text(groupNic, SWT.BORDER);
-        textNic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        listTextParameter.add(textNic);
-
-        // check button for the useReadThread and for CPU
-        Group groupUseReadThreadAndCpu = new Group(compositeExecution, SWT.NONE);
-        groupUseReadThreadAndCpu.setLayout(new GridLayout(2, false));
-        groupUseReadThreadAndCpu.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
-        Button useReadThread = new Button(groupUseReadThreadAndCpu, SWT.CHECK);
-        useReadThread.setText("Use Read Thread");
-        useReadThread.setSelection(false);
-        useReadThread.setToolTipText("Use a separate thread (instead of a callback) to read data.");
-        Button cpu = new Button(groupUseReadThreadAndCpu, SWT.CHECK);
-        cpu.setText("CPU");
-        cpu.setSelection(false);
-        cpu.setToolTipText("Display the cpu used by the RTI Perftest process.");
-
-        // Combo FlowController
-        Group groupFlowController = new Group(compositeExecution, SWT.NONE);
-        groupFlowController.setLayout(new GridLayout(2, false));
-        groupFlowController.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
-        Label labelFlowController = new Label(groupFlowController, SWT.NONE);
-        labelFlowController.setText("Flow Controller");
-        labelFlowController.setToolTipText(
-                "Specify the name of the flow controller that will be used by the DataWriters. This will only have effect if the DataWriter uses Asynchronous Publishing either because it is using samples greater than 63000 Bytes or because the -asynchronous option is present.");
-        Combo comboFlowController = new Combo(groupFlowController, SWT.READ_ONLY);
-        comboFlowController.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        comboFlowController.setItems(listFlowController);
-        comboFlowController.setText(listFlowController[0]);
-
-        // Initial peers
-        // TODO add several initials peers, like a list
-        Group groupInitalPeers = new Group(compositeExecution, SWT.NONE);
-        groupInitalPeers.setLayout(new GridLayout(2, false));
-        groupInitalPeers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        Label labelInitalPeers = new Label(groupInitalPeers, SWT.NONE);
-        labelInitalPeers.setText("Inital Peers");
-        labelInitalPeers.setToolTipText(
-                "Adds a peer to the peer host address list. This argument may be repeated to indicate multiple peers.");
-        Text textInitalPeers = new Text(groupInitalPeers, SWT.BORDER);
-        textInitalPeers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        listTextParameter.add(textInitalPeers);
-
-        // four buttons for compile and advance option and security option
+        // five buttons for compile and advance option and security option
         Group groupButtons = new Group(compositeExecution, SWT.NONE);
-        groupButtons.setLayout(new GridLayout(4, false));
+        groupButtons.setLayout(new GridLayout(5, false));
         groupButtons.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
         Button btnExecute = new Button(groupButtons, SWT.PUSH);
         btnExecute.setText("Run");
         btnExecute.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button btnAdvancedOptionExecution = new Button(groupButtons, SWT.PUSH);
+        btnAdvancedOptionExecution.setText("Advanced Option");
+        btnAdvancedOptionExecution.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Button btnAdvancedOptionPub = new Button(groupButtons, SWT.PUSH);
         btnAdvancedOptionPub.setText("Advanced Option Pub");
         btnAdvancedOptionPub.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
@@ -1471,69 +1561,17 @@ public class GUI_RTIPerftest {
                 } else {
                     mapParameter.put("-instances", "");
                 }
-                if (TCP.getSelection()) {
-                    mapParameter.put("-enableTcp", " -enableTcp");
-                } else {
-                    mapParameter.put("-enableTcp", "");
-                }
-                if (shareMemory.getSelection()) {
-                    mapParameter.put("-enableSharedMemory", " -enableSharedMemory");
-                } else {
-                    mapParameter.put("-enableSharedMemory", "");
-                }
-                if (!textDataLen.getText().replaceAll("\\s+", "").equals("")) {
-                    mapParameter.put("-dataLen", " -dataLen " + textDataLen.getText().replaceAll("\\s+", ""));
-                } else {
-                    mapParameter.put("-dataLen", "");
-                }
-                if (dynamic.getSelection()) {
-                    mapParameter.put("-dynamicData", " -dynamicData ");
-                } else {
-                    mapParameter.put("-dynamicData", "");
-                }
-                if (!comboDurability.getText().replaceAll("\\s+", "").equals("")) {
-                    mapParameter.put("-durability", " -durability " + listDurability.get(comboDurability.getText()));
-                } else {
-                    mapParameter.put("-durability", "");
-                }
-                if (multicast.getSelection()) {
-                    mapParameter.put("-multicast", " -multicast");
-                } else {
-                    mapParameter.put("-multicast", "");
-                }
-                if (!textMulticast.getText().replaceAll("\\s+", "").equals("") && multicast.getSelection()) {
-                    mapParameter.put("-multicastAddress",
-                            " -multicastAddress " + textMulticast.getText().replaceAll("\\s+", ""));
-                } else {
-                    mapParameter.put("-multicastAddress", "");
-                }
-                if (!textNic.getText().replaceAll("\\s+", "").equals("")) {
-                    mapParameter.put("-nic", " -nic " + textNic.getText().replaceAll("\\s+", ""));
-                } else {
-                    mapParameter.put("-nic", "");
-                }
-                if (!textInitalPeers.getText().replaceAll("\\s+", "").equals("")) {
-                    mapParameter.put("-peer", " -peer " + textInitalPeers.getText().replaceAll("\\s+", ""));
-                } else {
-                    mapParameter.put("-peer", "");
-                }
-                if (useReadThread.getSelection()) {
-                    mapParameter.put("-useReadThread", " -useReadThread");
-                } else {
-                    mapParameter.put("-useReadThread", "");
-                }
-                if (cpu.getSelection()) {
-                    mapParameter.put("-cpu", " -cpu");
-                } else {
-                    mapParameter.put("-cpu", "");
-                }
-                if (!comboFlowController.getText().replaceAll("\\s+", "").equals("")) {
-                    mapParameter.put("-flowController", " -flowController " + comboFlowController.getText());
-                } else {
-                    mapParameter.put("-flowController", "");
-                }
                 // TODO cleanInput(outputTextField,listTextCompile);
                 executePerftest(textCommand, outputTextField, language);
+            }
+        });
+
+        // listener button advance option execution
+        btnAdvancedOptionExecution.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                System.out.println("Button advance option execution clicked");
+                display_execution_advanced_option();
             }
         });
 
