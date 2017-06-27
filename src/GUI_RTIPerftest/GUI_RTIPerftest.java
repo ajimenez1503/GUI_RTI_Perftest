@@ -36,100 +36,6 @@ import org.apache.commons.exec.PumpStreamHandler;
 
 public class GUI_RTIPerftest {
 
-    private static class StyledTextOutputStreamCompile extends LogOutputStream {
-        private StyledText outputControl;
-        private String[][] replacements;
-        private Map<String, Color> colors;// create dictionary with parameter
-
-        private int c;
-
-        public StyledTextOutputStreamCompile(StyledText _outputControl) {
-            outputControl = _outputControl;
-            colors = new HashMap<String, Color>();
-            colors.put("[ERROR]:", Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
-            colors.put("[INFO]:", Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
-            colors.put("\033[0;31m", Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
-            colors.put("\033[0;32m", Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
-            colors.put("\033[0;33m", Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
-            colors.put("\033[0m", Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
-            c = 0;
-
-        }
-
-        @Override
-        protected void processLine(String line, int level) {
-            Display.getDefault().syncExec(new Runnable() {
-                public void run() {
-                    String lineCopy = line;
-                    Color specific_color = null;
-                    for(Map.Entry<String, Color> color : colors.entrySet()){
-                        if (lineCopy.contains(color.getKey())) {
-                            lineCopy = lineCopy.replace(color.getKey(), "");
-                            specific_color = color.getValue();
-                        }
-                    }
-                    outputControl.append(lineCopy + "\n");
-                    if (specific_color != null) {
-                        outputControl.setLineBackground(c, 1, specific_color);
-                    }
-                    c++;
-                }
-            });
-            System.out.println(line);
-        }
-    }
-    
-    private static class StyledTextOutputStreamExecution extends LogOutputStream {
-        private StyledText outputControl;
-
-
-        public StyledTextOutputStreamExecution(StyledText _outputControl) {
-            outputControl = _outputControl;
-        }
-
-        @Override
-        protected void processLine(String line, int level) {
-            Display.getDefault().syncExec(new Runnable() {
-                public void run() {
-                    String lineCopy = line;
-                    outputControl.append(lineCopy + "\n");
-                }
-            });
-            System.out.println(line);
-        }
-    }
-
-    private void execute_command(String command, String workingDirectory, StyledText outputTextField, ExecutionType executionType) {
-        CommandLine cl = CommandLine.parse(command);
-        DefaultExecutor exec = new DefaultExecutor();
-        exec.setWorkingDirectory(new File(workingDirectory));
-        if (executionType == ExecutionType.Compile){
-            exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamCompile(outputTextField)));
-        } else { //if (executionType == ExecutionType.Pub && executionType == ExecutionType.Sub){
-            exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamExecution(outputTextField)));
-        }
-        exec.setWatchdog(new ExecuteWatchdog(30000));
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    int exitValue = exec.execute(cl);
-                    if (exitValue != 0) {
-                        // show_error("Command line '" + command + "' returned
-                        // non-zero value:" + exitValue);
-                    }
-                } catch (ExecuteException e) {
-                    //e.printStackTrace();
-                    System.out.println(e.toString());
-                } catch (IOException e) {
-                    //e.printStackTrace();
-                    System.out.println(e.toString());
-                }
-            }
-
-        }).start();
-    }
-    
     /**
      * types of Execution
      */
@@ -159,11 +65,13 @@ public class GUI_RTIPerftest {
     private String[] possiblePlatform;
     private Map<String, String> listDurability;
     private String[] listFlowController;
+    private  DefaultExecutor exec;
 
     /**
      * Constructor
      */
     public GUI_RTIPerftest() {
+        exec = new DefaultExecutor();
         set_all_possible_platform();
         listTextParameter = new ArrayList<Text>();
         set_listDurability();
@@ -254,6 +162,37 @@ public class GUI_RTIPerftest {
         for (int i = 0; i < listText.size(); i++) {
             listText.get(i).setText("");
         }
+    }
+
+
+    private void execute_command(String command, String workingDirectory, StyledText outputTextField, ExecutionType executionType) {
+        CommandLine cl = CommandLine.parse(command);
+        exec.setWorkingDirectory(new File(workingDirectory));
+        if (executionType == ExecutionType.Compile){
+            exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamCompile(outputTextField)));
+        } else { //if (executionType == ExecutionType.Pub && executionType == ExecutionType.Sub){
+            exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamExecution(outputTextField)));
+        }
+        exec.setWatchdog(new ExecuteWatchdog(30000));
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    int exitValue = exec.execute(cl);
+                    if (exitValue != 0) {
+                        // show_error("Command line '" + command + "' returned
+                        // non-zero value:" + exitValue);
+                    }
+                } catch (ExecuteException e) {
+                    //e.printStackTrace();
+                    System.out.println(e.toString());
+                } catch (IOException e) {
+                    //e.printStackTrace();
+                    System.out.println(e.toString());
+                }
+            }
+
+        }).start();
     }
 
     /**
@@ -1517,11 +1456,14 @@ public class GUI_RTIPerftest {
 
         // five buttons for compile and advance option and security option
         Group groupButtons = new Group(compositeExecution, SWT.NONE);
-        groupButtons.setLayout(new GridLayout(5, false));
+        groupButtons.setLayout(new GridLayout(6, false));
         groupButtons.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
         Button btnExecute = new Button(groupButtons, SWT.PUSH);
         btnExecute.setText("Run");
         btnExecute.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button btnStop = new Button(groupButtons, SWT.PUSH);
+        btnStop.setText("Stop");
+        btnStop.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Button btnAdvancedOptionExecution = new Button(groupButtons, SWT.PUSH);
         btnAdvancedOptionExecution.setText("Advanced Option");
         btnAdvancedOptionExecution.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
@@ -1669,6 +1611,79 @@ public class GUI_RTIPerftest {
                 btnAdvancedOptionSub.setEnabled(true);
             }
         });
+        
+        // Stop job
+        btnStop.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                exec.getWatchdog().destroyProcess();
+                outputTextField.setText("");
+                textCommand.setText("");
+            }
+        });
+    }
+    
+    private static class StyledTextOutputStreamCompile extends LogOutputStream {
+        private StyledText outputControl;
+        private String[][] replacements;
+        private Map<String, Color> colors;// create dictionary with parameter
+
+        private int c;
+
+        public StyledTextOutputStreamCompile(StyledText _outputControl) {
+            outputControl = _outputControl;
+            colors = new HashMap<String, Color>();
+            colors.put("[ERROR]:", Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
+            colors.put("[INFO]:", Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
+            colors.put("\033[0;31m", Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
+            colors.put("\033[0;32m", Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
+            colors.put("\033[0;33m", Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
+            colors.put("\033[0m", Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
+            c = 0;
+
+        }
+
+        @Override
+        protected void processLine(String line, int level) {
+            Display.getDefault().syncExec(new Runnable() {
+                public void run() {
+                    String lineCopy = line;
+                    Color specific_color = null;
+                    for(Map.Entry<String, Color> color : colors.entrySet()){
+                        if (lineCopy.contains(color.getKey())) {
+                            lineCopy = lineCopy.replace(color.getKey(), "");
+                            specific_color = color.getValue();
+                        }
+                    }
+                    outputControl.append(lineCopy + "\n");
+                    if (specific_color != null) {
+                        outputControl.setLineBackground(c, 1, specific_color);
+                    }
+                    c++;
+                }
+            });
+            System.out.println(line);
+        }
+    }
+    
+    private static class StyledTextOutputStreamExecution extends LogOutputStream {
+        private StyledText outputControl;
+
+
+        public StyledTextOutputStreamExecution(StyledText _outputControl) {
+            outputControl = _outputControl;
+        }
+
+        @Override
+        protected void processLine(String line, int level) {
+            Display.getDefault().syncExec(new Runnable() {
+                public void run() {
+                    String lineCopy = line;
+                    outputControl.append(lineCopy + "\n");
+                }
+            });
+            System.out.println(line);
+        }
     }
 
     @SuppressWarnings("unused")
