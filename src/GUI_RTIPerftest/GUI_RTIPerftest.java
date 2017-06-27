@@ -421,7 +421,7 @@ public class GUI_RTIPerftest {
 
         shell.open();
         shell.pack();
-        shell.setText("RTI perftest");
+        shell.setText("RTI Perftest");
         shell.setSize(900, 900);
 
         shell.addListener(SWT.Traverse, new Listener() {
