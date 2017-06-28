@@ -8,7 +8,10 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
-
+import org.swtchart.Chart;
+import org.swtchart.ILineSeries;
+import org.swtchart.LineStyle;
+import org.swtchart.ISeries.SeriesType;
 import org.eclipse.swt.custom.StyledText;
 
 import java.util.HashMap;
@@ -1331,6 +1334,33 @@ public class GUI_RTIPerftest {
     }
 
     /**
+     * create the chart.
+     * 
+     * @param parent The parent composite
+     * @return The created chart
+     */
+    static public Chart createChart(Composite parent) {
+        double[] ySeries = { 0.0, 0.38, 0.71, 0.92, 1.0, 0.92, 0.71, 0.38, 0.0, -0.38, -0.71, -0.92, -1.0, -0.92, -0.71,
+                -0.38 };
+        // create a chart
+        Chart chart = new Chart(parent, SWT.NONE);
+
+        // set titles
+        chart.getTitle().setText("Throughtput");
+        chart.getAxisSet().getXAxis(0).getTitle().setText("Time");
+        chart.getAxisSet().getYAxis(0).getTitle().setText("Mbps");
+
+        // create line series
+        ILineSeries lineSeries = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "line series");
+        lineSeries.setYSeries(ySeries);
+
+        // adjust the axis range
+        chart.getAxisSet().adjustRange();
+
+        return chart;
+    }
+
+    /**
      * Display the execution tab with all the parameter. However we have a list
      * of parameter which are not added: verbosity, instanceHashBuckets,
      * keepDurationUsec, noDirectCommunication, noPositiveAcks,
@@ -1344,11 +1374,11 @@ public class GUI_RTIPerftest {
         compositeExecution.setLayout(new GridLayout(4, false));
         tabExecute.setControl(compositeExecution);
 
+        // PerftestPath
         Group groupGeneral = new Group(compositeExecution, SWT.NONE);
         groupGeneral.setLayout(new GridLayout(4, false));
         groupGeneral.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 2));
 
-        // PerftestPath
         Group groupPerftestPath = new Group(groupGeneral, SWT.NONE);
         groupPerftestPath.setLayout(new GridLayout(3, false));
         groupPerftestPath.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
@@ -1490,10 +1520,29 @@ public class GUI_RTIPerftest {
         textCommand.computeSize(100, 100, true);
         listTextParameter.add(textCommand);
 
+        TabFolder folder_output = new TabFolder(compositeExecution, SWT.NONE);
+        folder_output.setLayout(new GridLayout(4, false));
+        folder_output.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1));
+
         // text output command
-        StyledText outputTextField = new StyledText(compositeExecution,
+        TabItem tabExecuteOutputText = new TabItem(folder_output, SWT.NONE);
+        tabExecuteOutputText.setText("Text Output");
+        Composite compositeExecutionOutputText = new Composite(folder_output, SWT.NONE);
+        compositeExecutionOutputText.setLayout(new GridLayout(4, false));
+        tabExecuteOutputText.setControl(compositeExecutionOutputText);
+
+        StyledText outputTextField = new StyledText(compositeExecutionOutputText,
                 SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         outputTextField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1));
+
+        // Chart output command
+        TabItem tabExecuteOutputChart = new TabItem(folder_output, SWT.NONE);
+        tabExecuteOutputChart.setText("Chart Output");
+
+        Composite compositeExecutionOutputChart = new Composite(folder_output, SWT.NONE);
+        compositeExecutionOutputChart.setLayout(new FillLayout());
+        tabExecuteOutputChart.setControl(compositeExecutionOutputChart);
+        createChart(compositeExecutionOutputChart);
 
         // listener button compile
         btnExecute.addSelectionListener(new SelectionAdapter() {
