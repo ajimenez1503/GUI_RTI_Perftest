@@ -42,23 +42,81 @@ public class GUI_RTIPerftest {
     /**
      * types of Execution
      */
-    private enum ExecutionType {
+    protected enum ExecutionType {
         Compile, Pub, Sub
     };
 
     /**
      * types of Operating Systems
      */
-    private enum OSType {
+    public enum OSType {
         Windows, Darwin, Linux, Other
     };
 
     /**
      * types of Supported Languages
      */
-    private enum Language {
+    public enum Language {
         cpp, cpp03, cs, java
     };
+
+    public class Chart_RTIPerftest {
+        private Chart chart;
+        private ArrayList<Double> data;
+        private ILineSeries lineSeries;
+
+        public Chart_RTIPerftest(Composite parent) {
+            chart = new Chart(parent, SWT.None);
+            lineSeries = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "line series");
+            data = new ArrayList<Double>();
+        }
+
+        /**
+         * update chart
+         * 
+         * @param parent
+         *            The parent composite
+         * @return The created chart
+         */
+        public void setType(ExecutionType type) {
+            if (type == ExecutionType.Pub) {
+                // set titles
+                chart.getTitle().setText("Throughtput");
+                chart.getAxisSet().getXAxis(0).getTitle().setText("Time");
+                chart.getAxisSet().getYAxis(0).getTitle().setText("Mbps");
+            } else { // if (type == ExecutionType.Sub){
+                // set titles
+                chart.getTitle().setText("Latency");
+                chart.getAxisSet().getXAxis(0).getTitle().setText("Time");
+                chart.getAxisSet().getYAxis(0).getTitle().setText("Us");
+            }
+        }
+
+        /**
+         * update chart
+         * 
+         * @param parent
+         *            The parent composite
+         * @return The created chart
+         */
+        public void update(double new_value) {
+
+            data.add(new_value);
+            // create line series
+            lineSeries.setYSeries(toPrimitive(data.toArray(new Double[data.size()])));
+            // adjust the axis range
+            chart.getAxisSet().adjustRange();
+            chart.update();
+        }
+
+        private double[] toPrimitive(Double[] array) {
+            double[] result = new double[array.length];
+            for (int i = 0; i < array.length; i++) {
+                result[i] = array[i].doubleValue();
+            }
+            return result;
+        }
+    }
 
     private static OSType detectedOS; // cached result of OS detection
     private Shell shell;
@@ -168,14 +226,14 @@ public class GUI_RTIPerftest {
     }
 
     private void execute_command(String command, String workingDirectory, StyledText outputTextField,
-            ExecutionType executionType) {
+            ExecutionType executionType, Chart_RTIPerftest chart) {
         CommandLine cl = CommandLine.parse(command);
         exec.setWorkingDirectory(new File(workingDirectory));
         if (executionType == ExecutionType.Compile) {
             exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamCompile(outputTextField)));
         } else { // if (executionType == ExecutionType.Pub && executionType ==
                  // ExecutionType.Sub){
-            exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamExecution(outputTextField)));
+            exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamExecution(outputTextField, chart)));
         }
         exec.setWatchdog(new ExecuteWatchdog(30000));
         new Thread(new Runnable() {
@@ -241,7 +299,7 @@ public class GUI_RTIPerftest {
         System.out.println(command);
         textCommand.setText(command);
 
-        execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Compile);
+        execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Compile, null);
         return true;
     }
 
@@ -253,7 +311,8 @@ public class GUI_RTIPerftest {
      *
      * @returns - True if the commands works, False if the OS is not found
      */
-    private Boolean executePerftest(Text textCommand, StyledText outputTextField, Language language) {
+    private Boolean executePerftest(Text textCommand, StyledText outputTextField, Language language, ExecutionType type,
+            Chart_RTIPerftest chart) {
         outputTextField.setText("");
         // create parameter
         String command = "./bin/";
@@ -362,11 +421,7 @@ public class GUI_RTIPerftest {
         // print command to run
         System.out.println(command);
         textCommand.setText(command);
-        if (!get_paramenter("-pub").isEmpty()) {
-            execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Pub);
-        } else { // if (!get_paramenter("-sub").isEmpty()) {
-            execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Sub);
-        }
+        execute_command(command, get_paramenter("Perftest"), outputTextField, type, chart);
         return true;
     }
 
@@ -399,7 +454,7 @@ public class GUI_RTIPerftest {
         // print command to run
         System.out.println(command);
         textCommand.setText(command);
-        execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Compile);
+        execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Compile, null);
 
         return true;
     }
@@ -1334,33 +1389,6 @@ public class GUI_RTIPerftest {
     }
 
     /**
-     * create the chart.
-     * 
-     * @param parent The parent composite
-     * @return The created chart
-     */
-    static public Chart createChart(Composite parent) {
-        double[] ySeries = { 0.0, 0.38, 0.71, 0.92, 1.0, 0.92, 0.71, 0.38, 0.0, -0.38, -0.71, -0.92, -1.0, -0.92, -0.71,
-                -0.38 };
-        // create a chart
-        Chart chart = new Chart(parent, SWT.NONE);
-
-        // set titles
-        chart.getTitle().setText("Throughtput");
-        chart.getAxisSet().getXAxis(0).getTitle().setText("Time");
-        chart.getAxisSet().getYAxis(0).getTitle().setText("Mbps");
-
-        // create line series
-        ILineSeries lineSeries = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "line series");
-        lineSeries.setYSeries(ySeries);
-
-        // adjust the axis range
-        chart.getAxisSet().adjustRange();
-
-        return chart;
-    }
-
-    /**
      * Display the execution tab with all the parameter. However we have a list
      * of parameter which are not added: verbosity, instanceHashBuckets,
      * keepDurationUsec, noDirectCommunication, noPositiveAcks,
@@ -1542,7 +1570,7 @@ public class GUI_RTIPerftest {
         Composite compositeExecutionOutputChart = new Composite(folder_output, SWT.NONE);
         compositeExecutionOutputChart.setLayout(new FillLayout());
         tabExecuteOutputChart.setControl(compositeExecutionOutputChart);
-        createChart(compositeExecutionOutputChart);
+        Chart_RTIPerftest chart = new Chart_RTIPerftest(compositeExecutionOutputChart);
 
         // listener button compile
         btnExecute.addSelectionListener(new SelectionAdapter() {
@@ -1616,7 +1644,13 @@ public class GUI_RTIPerftest {
                     mapParameter.put("-instances", "");
                 }
                 // TODO cleanInput(outputTextField,listTextCompile);
-                executePerftest(textCommand, outputTextField, language);
+                if (!get_paramenter("-pub").isEmpty()) {
+                    executePerftest(textCommand, outputTextField, language, ExecutionType.Pub, chart);
+                    chart.setType(ExecutionType.Pub);
+                } else { // if (!get_paramenter("-sub").isEmpty()) {
+                    executePerftest(textCommand, outputTextField, language, ExecutionType.Sub, chart);
+                    chart.setType(ExecutionType.Sub);
+                }
             }
         });
 
@@ -1723,9 +1757,13 @@ public class GUI_RTIPerftest {
 
     private static class StyledTextOutputStreamExecution extends LogOutputStream {
         private StyledText outputControl;
+        private Chart_RTIPerftest chart;
+        private double c;
 
-        public StyledTextOutputStreamExecution(StyledText _outputControl) {
+        public StyledTextOutputStreamExecution(StyledText _outputControl, Chart_RTIPerftest _chart) {
             outputControl = _outputControl;
+            chart = _chart;
+            c = 0;
         }
 
         @Override
@@ -1733,6 +1771,7 @@ public class GUI_RTIPerftest {
             Display.getDefault().syncExec(new Runnable() {
                 public void run() {
                     String lineCopy = line;
+                    chart.update(c);
                     outputControl.append(lineCopy + "\n");
                 }
             });
