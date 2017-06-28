@@ -65,7 +65,7 @@ public class GUI_RTIPerftest {
     private String[] possiblePlatform;
     private Map<String, String> listDurability;
     private String[] listFlowController;
-    private  DefaultExecutor exec;
+    private DefaultExecutor exec;
 
     /**
      * Constructor
@@ -164,13 +164,14 @@ public class GUI_RTIPerftest {
         }
     }
 
-
-    private void execute_command(String command, String workingDirectory, StyledText outputTextField, ExecutionType executionType) {
+    private void execute_command(String command, String workingDirectory, StyledText outputTextField,
+            ExecutionType executionType) {
         CommandLine cl = CommandLine.parse(command);
         exec.setWorkingDirectory(new File(workingDirectory));
-        if (executionType == ExecutionType.Compile){
+        if (executionType == ExecutionType.Compile) {
             exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamCompile(outputTextField)));
-        } else { //if (executionType == ExecutionType.Pub && executionType == ExecutionType.Sub){
+        } else { // if (executionType == ExecutionType.Pub && executionType ==
+                 // ExecutionType.Sub){
             exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamExecution(outputTextField)));
         }
         exec.setWatchdog(new ExecuteWatchdog(30000));
@@ -184,10 +185,10 @@ public class GUI_RTIPerftest {
                         // non-zero value:" + exitValue);
                     }
                 } catch (ExecuteException e) {
-                    //e.printStackTrace();
+                    // e.printStackTrace();
                     System.out.println(e.toString());
                 } catch (IOException e) {
-                    //e.printStackTrace();
+                    // e.printStackTrace();
                     System.out.println(e.toString());
                 }
             }
@@ -395,7 +396,7 @@ public class GUI_RTIPerftest {
         // print command to run
         System.out.println(command);
         textCommand.setText(command);
-        execute_command(command, get_paramenter("Perftest"), outputTextField,ExecutionType.Compile);
+        execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Compile);
 
         return true;
     }
@@ -1456,14 +1457,8 @@ public class GUI_RTIPerftest {
 
         // five buttons for compile and advance option and security option
         Group groupButtons = new Group(compositeExecution, SWT.NONE);
-        groupButtons.setLayout(new GridLayout(6, false));
+        groupButtons.setLayout(new GridLayout(4, false));
         groupButtons.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
-        Button btnExecute = new Button(groupButtons, SWT.PUSH);
-        btnExecute.setText("Run");
-        btnExecute.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        Button btnStop = new Button(groupButtons, SWT.PUSH);
-        btnStop.setText("Stop");
-        btnStop.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Button btnAdvancedOptionExecution = new Button(groupButtons, SWT.PUSH);
         btnAdvancedOptionExecution.setText("Advanced Option");
         btnAdvancedOptionExecution.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
@@ -1477,6 +1472,17 @@ public class GUI_RTIPerftest {
         Button btnSecureOption = new Button(groupButtons, SWT.PUSH);
         btnSecureOption.setText("Secure Option");
         btnSecureOption.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+
+        // two buttons for run and stop
+        Group groupButton2s = new Group(compositeExecution, SWT.NONE);
+        groupButton2s.setLayout(new GridLayout(2, false));
+        groupButton2s.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
+        Button btnExecute = new Button(groupButtons, SWT.PUSH);
+        btnExecute.setText("Run");
+        btnExecute.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        Button btnStop = new Button(groupButtons, SWT.PUSH);
+        btnStop.setText("Stop");
+        btnStop.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
 
         // text command
         Text textCommand = new Text(compositeExecution, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL);
@@ -1611,7 +1617,7 @@ public class GUI_RTIPerftest {
                 btnAdvancedOptionSub.setEnabled(true);
             }
         });
-        
+
         // Stop job
         btnStop.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -1622,7 +1628,7 @@ public class GUI_RTIPerftest {
             }
         });
     }
-    
+
     private static class StyledTextOutputStreamCompile extends LogOutputStream {
         private StyledText outputControl;
         private String[][] replacements;
@@ -1649,7 +1655,7 @@ public class GUI_RTIPerftest {
                 public void run() {
                     String lineCopy = line;
                     Color specific_color = null;
-                    for(Map.Entry<String, Color> color : colors.entrySet()){
+                    for (Map.Entry<String, Color> color : colors.entrySet()) {
                         if (lineCopy.contains(color.getKey())) {
                             lineCopy = lineCopy.replace(color.getKey(), "");
                             specific_color = color.getValue();
@@ -1665,10 +1671,9 @@ public class GUI_RTIPerftest {
             System.out.println(line);
         }
     }
-    
+
     private static class StyledTextOutputStreamExecution extends LogOutputStream {
         private StyledText outputControl;
-
 
         public StyledTextOutputStreamExecution(StyledText _outputControl) {
             outputControl = _outputControl;
