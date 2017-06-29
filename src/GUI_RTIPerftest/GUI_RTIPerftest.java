@@ -125,7 +125,6 @@ public class GUI_RTIPerftest {
             // create line series
             lineSeries.setYSeries(toPrimitive(data_instant.toArray(new Double[data_instant.size()])));
             lineSeriesAve.setYSeries(toPrimitive(data_ave.toArray(new Double[data_ave.size()])));
-
             chart.redraw();
             // adjust the axis range
             chart.getAxisSet().adjustRange();
