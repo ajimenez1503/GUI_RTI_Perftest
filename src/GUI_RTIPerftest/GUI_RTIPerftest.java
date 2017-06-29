@@ -108,7 +108,7 @@ public class GUI_RTIPerftest {
         public void reset() {
             data_instant.clear();
             data_ave.clear();
-            if (chart.getSeriesSet() != null) {
+            if (chart.getSeriesSet().getSeries().length > 0 ) {
                 chart.getSeriesSet().deleteSeries(lineSeries.getId());
                 chart.getSeriesSet().deleteSeries(lineSeriesAve.getId());
             }
@@ -249,6 +249,7 @@ public class GUI_RTIPerftest {
     private void execute_command(String command, String workingDirectory, StyledText outputTextField,
             ExecutionType executionType, Chart_RTIPerftest chart) {
         CommandLine cl = CommandLine.parse(command);
+        kill_job(); // kill in the case that there are already a job
         exec.setWorkingDirectory(new File(workingDirectory));
         if (executionType == ExecutionType.Compile) {
             exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamCompile(outputTextField)));
@@ -511,11 +512,7 @@ public class GUI_RTIPerftest {
             }
         }
         // Exit execution
-        if (exec.getWatchdog() != null) {
-            if (exec.getWatchdog().isWatching()) {
-                exec.getWatchdog().destroyProcess();
-            }
-        }
+        kill_job();
     }
 
     /**
@@ -601,11 +598,7 @@ public class GUI_RTIPerftest {
         itemExit.setText("&Exit");
         itemExit.addListener(SWT.Selection, new Listener() {
             public void handleEvent(Event event) {
-                if (exec.getWatchdog() != null) {
-                    if (exec.getWatchdog().isWatching()) {
-                        exec.getWatchdog().destroyProcess();
-                    }
-                }
+                kill_job();
                 shell.dispose();
             }
         });
@@ -1735,14 +1728,25 @@ public class GUI_RTIPerftest {
         btnStop.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (exec.getWatchdog() != null) {
-                    if (exec.getWatchdog().isWatching()) {
-                        exec.getWatchdog().destroyProcess();
-                    }
-                }
+                kill_job();
                 outputTextField.setText("");
             }
         });
+    }
+
+    /**
+     * kill the job after the execution.
+     * First check if there are a job running. 
+     * @return boolean, true if job is killed
+     */
+    private  boolean kill_job(){
+        if (exec.getWatchdog() != null) {
+            if (exec.getWatchdog().isWatching()) {
+                exec.getWatchdog().destroyProcess();
+                return true;
+            }
+        }
+        return false;
     }
 
     private static class StyledTextOutputStreamCompile extends LogOutputStream {
