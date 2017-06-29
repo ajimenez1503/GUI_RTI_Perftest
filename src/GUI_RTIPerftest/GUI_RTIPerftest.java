@@ -10,6 +10,7 @@ import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 import org.swtchart.Chart;
 import org.swtchart.ILineSeries;
+import org.swtchart.ILineSeries.PlotSymbolType;
 import org.swtchart.LineStyle;
 import org.swtchart.ISeries.SeriesType;
 import org.eclipse.swt.custom.StyledText;
@@ -62,13 +63,16 @@ public class GUI_RTIPerftest {
 
     public class Chart_RTIPerftest {
         private Chart chart;
-        private ArrayList<Double> data;
+        private ArrayList<Double> data_instant;
+        private ArrayList<Double> data_ave;
         private ILineSeries lineSeries;
+        private ILineSeries lineSeriesAve;
 
         public Chart_RTIPerftest(Composite parent) {
             chart = new Chart(parent, SWT.None);
-            lineSeries = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "line series");
-            data = new ArrayList<Double>();
+            chart.getAxisSet().getXAxis(0).getTick().setVisible(false);
+            data_instant = new ArrayList<Double>();
+            data_ave = new ArrayList<Double>();
         }
 
         /**
@@ -83,12 +87,18 @@ public class GUI_RTIPerftest {
                 chart.getTitle().setText("Throughtput");
                 chart.getAxisSet().getXAxis(0).getTitle().setText("Time");
                 chart.getAxisSet().getYAxis(0).getTitle().setText("Mbps");
+                lineSeries = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "Mbps");
+                lineSeriesAve = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "Mbps Ave");
             } else { // if (type == ExecutionType.Pub){
                 // set titles
                 chart.getTitle().setText("Latency");
                 chart.getAxisSet().getXAxis(0).getTitle().setText("Time");
                 chart.getAxisSet().getYAxis(0).getTitle().setText("Us");
+                lineSeries = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "Us");
+                lineSeriesAve = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "Us Ave");
             }
+            lineSeriesAve.setLineColor(Display.getDefault().getSystemColor(SWT.COLOR_RED));
+            lineSeriesAve.setSymbolType(PlotSymbolType.NONE);
         }
 
         /**
@@ -96,25 +106,29 @@ public class GUI_RTIPerftest {
          * 
          */
         public void reset() {
-            // create line series
-            data.clear();
-            lineSeries.setYSeries(toPrimitive(data.toArray(new Double[data.size()])));
-            chart.update();
+            data_instant.clear();
+            data_ave.clear();
+            if (chart.getSeriesSet() != null) {
+                chart.getSeriesSet().deleteSeries(lineSeries.getId());
+                chart.getSeriesSet().deleteSeries(lineSeriesAve.getId());
+            }
         }
 
         /**
          * update chart
          * 
-         * @param new_value
-         *            double
+         * @param instant_value double
          */
-        public void update(double new_value) {
-            data.add(new_value);
+        public void update(double instant_value, double ave_value) {
+            data_instant.add(instant_value);
+            data_ave.add(ave_value);
             // create line series
-            lineSeries.setYSeries(toPrimitive(data.toArray(new Double[data.size()])));
+            lineSeries.setYSeries(toPrimitive(data_instant.toArray(new Double[data_instant.size()])));
+            lineSeriesAve.setYSeries(toPrimitive(data_ave.toArray(new Double[data_ave.size()])));
+
+            chart.redraw();
             // adjust the axis range
             chart.getAxisSet().adjustRange();
-            chart.redraw();
         }
 
         private double[] toPrimitive(Double[] array) {
@@ -250,7 +264,7 @@ public class GUI_RTIPerftest {
             @Override
             public void run() {
                 try {
-                    int exitValue = exec.execute(cl);
+                    exec.execute(cl);
                 } catch (ExecuteException e) {
                     // e.printStackTrace();
                     System.out.println(e.toString());
@@ -1789,12 +1803,15 @@ public class GUI_RTIPerftest {
 
         @Override
         protected void processLine(String line, int level) {
-            Double aux = -1.0;
+            Double instant_aux = -1.0;
+            Double ave_aux = -1.0;
             if (type == ExecutionType.Pub) {
                 if (line.contains("One way Latency:")) {
                     // One way Latency: 42 us Ave 321 us Std 173.6 us Min 39 us
                     // Max 636
-                    aux = Double.parseDouble(
+                    instant_aux = Double.parseDouble(line
+                            .substring(line.indexOf("Latency:") + 8, line.indexOf("us  Ave")).replaceAll("\\s+", ""));
+                    ave_aux = Double.parseDouble(
                             line.substring(line.indexOf("Ave") + 3, line.indexOf("us  Std")).replaceAll("\\s+", ""));
                 }
 
@@ -1802,17 +1819,20 @@ public class GUI_RTIPerftest {
                 if (line.contains("Packets:")) {
                     // Packets: 2097033 Packets/s: 32791 Packets/s(ave): 51858
                     // Mbps: 26.2 Mbps(ave): 41.5 Lost: 0
-                    aux = Double.parseDouble(line.substring(line.indexOf("Mbps(ave):") + 10, line.indexOf("Lost:"))
+                    instant_aux = Double.parseDouble(line
+                            .substring(line.indexOf("Mbps:") + 5, line.indexOf("Mbps(ave):")).replaceAll("\\s+", ""));
+                    ave_aux = Double.parseDouble(line.substring(line.indexOf("Mbps(ave):") + 10, line.indexOf("Lost:"))
                             .replaceAll("\\s+", ""));
                 }
             }
-            Double value = aux;
+            Double instant_value = instant_aux;
+            Double ave_value = ave_aux;
             Display.getDefault().syncExec(new Runnable() {
                 public void run() {
                     String lineCopy = line;
                     outputControl.append(lineCopy + "\n");
-                    if (value != -1.0) {
-                        chart.update(value);
+                    if (instant_value != -1.0) {
+                        chart.update(instant_value, ave_value);
                     }
                 }
             });
