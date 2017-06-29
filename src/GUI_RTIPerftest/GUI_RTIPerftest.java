@@ -74,17 +74,16 @@ public class GUI_RTIPerftest {
         /**
          * update chart
          * 
-         * @param parent
-         *            The parent composite
-         * @return The created chart
+         * @param type
+         *            ExecutionType
          */
         public void setType(ExecutionType type) {
-            if (type == ExecutionType.Pub) {
+            if (type == ExecutionType.Sub) {
                 // set titles
                 chart.getTitle().setText("Throughtput");
                 chart.getAxisSet().getXAxis(0).getTitle().setText("Time");
                 chart.getAxisSet().getYAxis(0).getTitle().setText("Mbps");
-            } else { // if (type == ExecutionType.Sub){
+            } else { // if (type == ExecutionType.Pub){
                 // set titles
                 chart.getTitle().setText("Latency");
                 chart.getAxisSet().getXAxis(0).getTitle().setText("Time");
@@ -93,20 +92,29 @@ public class GUI_RTIPerftest {
         }
 
         /**
+         * reset chart
+         * 
+         */
+        public void reset() {
+            // create line series
+            data.clear();
+            lineSeries.setYSeries(toPrimitive(data.toArray(new Double[data.size()])));
+            chart.update();
+        }
+
+        /**
          * update chart
          * 
-         * @param parent
-         *            The parent composite
-         * @return The created chart
+         * @param new_value
+         *            double
          */
         public void update(double new_value) {
-
             data.add(new_value);
             // create line series
             lineSeries.setYSeries(toPrimitive(data.toArray(new Double[data.size()])));
             // adjust the axis range
             chart.getAxisSet().adjustRange();
-            chart.update();
+            chart.redraw();
         }
 
         private double[] toPrimitive(Double[] array) {
@@ -231,20 +239,18 @@ public class GUI_RTIPerftest {
         exec.setWorkingDirectory(new File(workingDirectory));
         if (executionType == ExecutionType.Compile) {
             exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamCompile(outputTextField)));
-        } else { // if (executionType == ExecutionType.Pub && executionType ==
-                 // ExecutionType.Sub){
-            exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamExecution(outputTextField, chart)));
+        } else { // if (executionType == ExecutionType.Pub || executionType ==
+                 // ExecutionType.Sub)
+            chart.reset();
+            exec.setStreamHandler(
+                    new PumpStreamHandler(new StyledTextOutputStreamExecution(outputTextField, chart, executionType)));
         }
-        exec.setWatchdog(new ExecuteWatchdog(30000));
+        exec.setWatchdog(new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT));
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     int exitValue = exec.execute(cl);
-                    if (exitValue != 0) {
-                        // show_error("Command line '" + command + "' returned
-                        // non-zero value:" + exitValue);
-                    }
                 } catch (ExecuteException e) {
                     // e.printStackTrace();
                     System.out.println(e.toString());
@@ -491,6 +497,12 @@ public class GUI_RTIPerftest {
                 shell.getDisplay().sleep();
             }
         }
+        // Exit execution
+        if (exec.getWatchdog() != null) {
+            if (exec.getWatchdog().isWatching()) {
+                exec.getWatchdog().destroyProcess();
+            }
+        }
     }
 
     /**
@@ -576,6 +588,11 @@ public class GUI_RTIPerftest {
         itemExit.setText("&Exit");
         itemExit.addListener(SWT.Selection, new Listener() {
             public void handleEvent(Event event) {
+                if (exec.getWatchdog() != null) {
+                    if (exec.getWatchdog().isWatching()) {
+                        exec.getWatchdog().destroyProcess();
+                    }
+                }
                 shell.dispose();
             }
         });
@@ -1705,9 +1722,12 @@ public class GUI_RTIPerftest {
         btnStop.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                exec.getWatchdog().destroyProcess();
+                if (exec.getWatchdog() != null) {
+                    if (exec.getWatchdog().isWatching()) {
+                        exec.getWatchdog().destroyProcess();
+                    }
+                }
                 outputTextField.setText("");
-                textCommand.setText("");
             }
         });
     }
@@ -1758,21 +1778,42 @@ public class GUI_RTIPerftest {
     private static class StyledTextOutputStreamExecution extends LogOutputStream {
         private StyledText outputControl;
         private Chart_RTIPerftest chart;
-        private double c;
+        private ExecutionType type;
 
-        public StyledTextOutputStreamExecution(StyledText _outputControl, Chart_RTIPerftest _chart) {
+        public StyledTextOutputStreamExecution(StyledText _outputControl, Chart_RTIPerftest _chart,
+                ExecutionType _type) {
             outputControl = _outputControl;
             chart = _chart;
-            c = 0;
+            type = _type;
         }
 
         @Override
         protected void processLine(String line, int level) {
+            Double aux = -1.0;
+            if (type == ExecutionType.Pub) {
+                if (line.contains("One way Latency:")) {
+                    // One way Latency: 42 us Ave 321 us Std 173.6 us Min 39 us
+                    // Max 636
+                    aux = Double.parseDouble(
+                            line.substring(line.indexOf("Ave") + 3, line.indexOf("us  Std")).replaceAll("\\s+", ""));
+                }
+
+            } else { // if (type == ExecutionType.Sub) {
+                if (line.contains("Packets:")) {
+                    // Packets: 2097033 Packets/s: 32791 Packets/s(ave): 51858
+                    // Mbps: 26.2 Mbps(ave): 41.5 Lost: 0
+                    aux = Double.parseDouble(line.substring(line.indexOf("Mbps(ave):") + 10, line.indexOf("Lost:"))
+                            .replaceAll("\\s+", ""));
+                }
+            }
+            Double value = aux;
             Display.getDefault().syncExec(new Runnable() {
                 public void run() {
                     String lineCopy = line;
-                    chart.update(c);
                     outputControl.append(lineCopy + "\n");
+                    if (value != -1.0) {
+                        chart.update(value);
+                    }
                 }
             });
             System.out.println(line);
