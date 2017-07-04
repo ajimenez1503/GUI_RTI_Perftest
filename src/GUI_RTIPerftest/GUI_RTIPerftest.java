@@ -1819,7 +1819,7 @@ public class GUI_RTIPerftest {
                 }
 
             } else { // if (type == ExecutionType.Sub) {
-                if (line.contains("Packets:")) {
+                if (line.contains("Packets/s:")) {
                     // Packets: 2097033 Packets/s: 32791 Packets/s(ave): 51858
                     // Mbps: 26.2 Mbps(ave): 41.5 Lost: 0
                     instant_aux = Double.parseDouble(line
