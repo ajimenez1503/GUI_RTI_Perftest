@@ -108,16 +108,19 @@ public class GUI_RTIPerftest {
         public void reset() {
             data_instant.clear();
             data_ave.clear();
-            if (chart.getSeriesSet().getSeries().length > 0 ) {
+            if (chart.getSeriesSet().getSeries().length > 0) {
+                System.out.println("Reset chart");
                 chart.getSeriesSet().deleteSeries(lineSeries.getId());
                 chart.getSeriesSet().deleteSeries(lineSeriesAve.getId());
+                this.redraw();
             }
         }
 
         /**
-         * update chart
+         * update array
          * 
-         * @param instant_value double
+         * @param instant_value
+         *            double
          */
         public void update(double instant_value, double ave_value) {
             data_instant.add(instant_value);
@@ -125,6 +128,15 @@ public class GUI_RTIPerftest {
             // create line series
             lineSeries.setYSeries(toPrimitive(data_instant.toArray(new Double[data_instant.size()])));
             lineSeriesAve.setYSeries(toPrimitive(data_ave.toArray(new Double[data_ave.size()])));
+        }
+
+        /**
+         * update chart, redraw
+         * 
+         * @param instant_value
+         *            double
+         */
+        public void redraw() {
             chart.redraw();
             // adjust the axis range
             chart.getAxisSet().adjustRange();
@@ -247,7 +259,7 @@ public class GUI_RTIPerftest {
     }
 
     private void execute_command(String command, String workingDirectory, StyledText outputTextField,
-            ExecutionType executionType, Chart_RTIPerftest chart) {
+            ExecutionType executionType, Chart_RTIPerftest chart, boolean display_real_time) {
         CommandLine cl = CommandLine.parse(command);
         kill_job(); // kill in the case that there are already a job
         exec.setWorkingDirectory(new File(workingDirectory));
@@ -256,8 +268,8 @@ public class GUI_RTIPerftest {
         } else { // if (executionType == ExecutionType.Pub || executionType ==
                  // ExecutionType.Sub)
             chart.reset();
-            exec.setStreamHandler(
-                    new PumpStreamHandler(new StyledTextOutputStreamExecution(outputTextField, chart, executionType)));
+            exec.setStreamHandler(new PumpStreamHandler(
+                    new StyledTextOutputStreamExecution(outputTextField, chart, executionType, display_real_time)));
         }
         exec.setWatchdog(new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT));
         new Thread(new Runnable() {
@@ -319,7 +331,7 @@ public class GUI_RTIPerftest {
         System.out.println(command);
         textCommand.setText(command);
 
-        execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Compile, null);
+        execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Compile, null, false);
         return true;
     }
 
@@ -332,7 +344,7 @@ public class GUI_RTIPerftest {
      * @returns - True if the commands works, False if the OS is not found
      */
     private Boolean executePerftest(Text textCommand, StyledText outputTextField, Language language, ExecutionType type,
-            Chart_RTIPerftest chart) {
+            Chart_RTIPerftest chart, boolean display_real_time) {
         outputTextField.setText("");
         // create parameter
         String command = "./bin/";
@@ -441,7 +453,7 @@ public class GUI_RTIPerftest {
         // print command to run
         System.out.println(command);
         textCommand.setText(command);
-        execute_command(command, get_paramenter("Perftest"), outputTextField, type, chart);
+        execute_command(command, get_paramenter("Perftest"), outputTextField, type, chart, display_real_time);
         return true;
     }
 
@@ -474,7 +486,7 @@ public class GUI_RTIPerftest {
         // print command to run
         System.out.println(command);
         textCommand.setText(command);
-        execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Compile, null);
+        execute_command(command, get_paramenter("Perftest"), outputTextField, ExecutionType.Compile, null, false);
 
         return true;
     }
@@ -1554,14 +1566,28 @@ public class GUI_RTIPerftest {
         btnSecureOption.setText("Secure Option");
         btnSecureOption.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
 
-        // two buttons for run and stop
-        Group groupButton2s = new Group(compositeExecution, SWT.NONE);
-        groupButton2s.setLayout(new GridLayout(2, false));
-        groupButton2s.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
-        Button btnExecute = new Button(groupButtons, SWT.PUSH);
+        // two buttons for run and stop and a checkbox for the real time display
+        // data
+        Group groupButton3s = new Group(groupButtons, SWT.NONE);
+        groupButton3s.setLayout(new GridLayout(5, false));
+        groupButton3s.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 5, 1));
+        groupButton3s.setText("Execution");
+
+        Button btnExecute = new Button(groupButton3s, SWT.PUSH);
         btnExecute.setText("Run");
         btnExecute.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
-        Button btnStop = new Button(groupButtons, SWT.PUSH);
+
+        Group groupButton2s = new Group(groupButton3s, SWT.NONE);
+        groupButton2s.setLayout(new GridLayout(1, false));
+        groupButton2s.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button display_real_time = new Button(groupButton2s, SWT.CHECK);
+        display_real_time.setText("Real time");
+        display_real_time
+                .setToolTipText("Display all the output real time, else display at the end in order to use less CPU.");
+        display_real_time.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, false, 2, 1));
+        display_real_time.setSelection(true);
+
+        Button btnStop = new Button(groupButton3s, SWT.PUSH);
         btnStop.setText("Stop");
         btnStop.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
 
@@ -1668,10 +1694,12 @@ public class GUI_RTIPerftest {
                 }
                 // TODO cleanInput(outputTextField,listTextCompile);
                 if (!get_paramenter("-pub").isEmpty()) {
-                    executePerftest(textCommand, outputTextField, language, ExecutionType.Pub, chart);
+                    executePerftest(textCommand, outputTextField, language, ExecutionType.Pub, chart,
+                            display_real_time.getSelection());
                     chart.setType(ExecutionType.Pub);
                 } else { // if (!get_paramenter("-sub").isEmpty()) {
-                    executePerftest(textCommand, outputTextField, language, ExecutionType.Sub, chart);
+                    executePerftest(textCommand, outputTextField, language, ExecutionType.Sub, chart,
+                            display_real_time.getSelection());
                     chart.setType(ExecutionType.Sub);
                 }
             }
@@ -1735,11 +1763,11 @@ public class GUI_RTIPerftest {
     }
 
     /**
-     * kill the job after the execution.
-     * First check if there are a job running. 
+     * kill the job after the execution. First check if there are a job running.
+     * 
      * @return boolean, true if job is killed
      */
-    private  boolean kill_job(){
+    private boolean kill_job() {
         if (exec.getWatchdog() != null) {
             if (exec.getWatchdog().isWatching()) {
                 exec.getWatchdog().destroyProcess();
@@ -1796,25 +1824,33 @@ public class GUI_RTIPerftest {
         private StyledText outputControl;
         private Chart_RTIPerftest chart;
         private ExecutionType type;
+        private boolean display_real_time;
+        private boolean display_end;
+        private Double instant_value;
+        private Double ave_value;
 
-        public StyledTextOutputStreamExecution(StyledText _outputControl, Chart_RTIPerftest _chart,
-                ExecutionType _type) {
+        public StyledTextOutputStreamExecution(StyledText _outputControl, Chart_RTIPerftest _chart, ExecutionType _type,
+                boolean _display_real_time) {
             outputControl = _outputControl;
             chart = _chart;
             type = _type;
+            display_real_time = _display_real_time;
+            display_end = false;
+            instant_value = -1.0;
+            ave_value = -1.0;
         }
 
         @Override
         protected void processLine(String line, int level) {
-            Double instant_aux = -1.0;
-            Double ave_aux = -1.0;
+            instant_value = -1.0;
+            ave_value = -1.0;
             if (type == ExecutionType.Pub) {
                 if (line.contains("One way Latency:")) {
                     // One way Latency: 42 us Ave 321 us Std 173.6 us Min 39 us
                     // Max 636
-                    instant_aux = Double.parseDouble(line
+                    instant_value = Double.parseDouble(line
                             .substring(line.indexOf("Latency:") + 8, line.indexOf("us  Ave")).replaceAll("\\s+", ""));
-                    ave_aux = Double.parseDouble(
+                    ave_value = Double.parseDouble(
                             line.substring(line.indexOf("Ave") + 3, line.indexOf("us  Std")).replaceAll("\\s+", ""));
                 }
 
@@ -1822,21 +1858,33 @@ public class GUI_RTIPerftest {
                 if (line.contains("Packets/s:")) {
                     // Packets: 2097033 Packets/s: 32791 Packets/s(ave): 51858
                     // Mbps: 26.2 Mbps(ave): 41.5 Lost: 0
-                    instant_aux = Double.parseDouble(line
+                    instant_value = Double.parseDouble(line
                             .substring(line.indexOf("Mbps:") + 5, line.indexOf("Mbps(ave):")).replaceAll("\\s+", ""));
-                    ave_aux = Double.parseDouble(line.substring(line.indexOf("Mbps(ave):") + 10, line.indexOf("Lost:"))
-                            .replaceAll("\\s+", ""));
+                    ave_value = Double.parseDouble(line
+                            .substring(line.indexOf("Mbps(ave):") + 10, line.indexOf("Lost:")).replaceAll("\\s+", ""));
                 }
             }
-            Double instant_value = instant_aux;
-            Double ave_value = ave_aux;
+
+            if (line.contains("Length:")) { // Always display at the end
+                display_end = true;
+            }
             Display.getDefault().syncExec(new Runnable() {
                 public void run() {
                     String lineCopy = line;
-                    outputControl.append(lineCopy + "\n");
+
                     if (instant_value != -1.0) {
                         chart.update(instant_value, ave_value);
+                        if (display_real_time) {
+                            chart.redraw();
+                        }
                     }
+                    if (display_real_time) {
+                        outputControl.append(lineCopy + "\n");
+                    } else if (display_end) {
+                        chart.redraw();
+                        outputControl.append(lineCopy + "\n");
+                    }
+
                 }
             });
             System.out.println(line);
