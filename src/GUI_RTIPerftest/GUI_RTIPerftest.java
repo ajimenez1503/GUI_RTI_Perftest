@@ -641,7 +641,7 @@ public class GUI_RTIPerftest {
 
         // documentation help compile
         MenuItem itemHelpCompule = new MenuItem(helpMenu, SWT.PUSH);
-        itemHelpCompule.setText("&Help Compule");
+        itemHelpCompule.setText("&Help Compile");
         itemHelpCompule.addListener(SWT.Selection, new Listener() {
             public void handleEvent(Event event) {
                 openWebpage(
@@ -936,37 +936,37 @@ public class GUI_RTIPerftest {
     }
 
     /**
-     * Display new window with the Advanced Option of the Subscriber
+     * Display new window with the Advanced Options of the Subscriber
      *
      */
-    private void display_sub_advanced_option() {
+    private void display_sub_advanced_options() {
 
-        Shell shellAdvancedOptionSub = new Shell(shell.getDisplay(), SWT.CLOSE);
-        shellAdvancedOptionSub.setText("Subscriber Advanced Option");
-        shellAdvancedOptionSub.setLayout(new GridLayout(2, false));
+        Shell shellAdvancedOptionsSub = new Shell(shell.getDisplay(), SWT.CLOSE);
+        shellAdvancedOptionsSub.setText("Subscriber Advanced Options");
+        shellAdvancedOptionsSub.setLayout(new GridLayout(2, false));
 
         // numPublishers
-        Label labelNumPublishers = new Label(shellAdvancedOptionSub, SWT.NONE);
+        Label labelNumPublishers = new Label(shellAdvancedOptionsSub, SWT.NONE);
         labelNumPublishers.setText("Number of publisher");
         labelNumPublishers.setToolTipText(
                 "The subscribing application will wait for this number of publishing applications to start.");
-        Text textNumPublishers = new Text(shellAdvancedOptionSub, SWT.BORDER);
+        Text textNumPublishers = new Text(shellAdvancedOptionsSub, SWT.BORDER);
         textNumPublishers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textNumPublishers);
         textNumPublishers.setText("1");
 
         // sidMultiSubTest
-        Label labelSidMultiSubTest = new Label(shellAdvancedOptionSub, SWT.NONE);
+        Label labelSidMultiSubTest = new Label(shellAdvancedOptionsSub, SWT.NONE);
         labelSidMultiSubTest.setText("ID of Subscriber");
         labelSidMultiSubTest.setToolTipText("ID of the subscriber in a multi-subscriber test.");
-        Text textSidMultiSubTest = new Text(shellAdvancedOptionSub, SWT.BORDER);
+        Text textSidMultiSubTest = new Text(shellAdvancedOptionsSub, SWT.BORDER);
         textSidMultiSubTest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textSidMultiSubTest);
         textSidMultiSubTest.setText("0");
 
-        shellAdvancedOptionSub.open();
-        shellAdvancedOptionSub.pack();
-        shellAdvancedOptionSub.addListener(SWT.Close, new Listener() {
+        shellAdvancedOptionsSub.open();
+        shellAdvancedOptionsSub.pack();
+        shellAdvancedOptionsSub.addListener(SWT.Close, new Listener() {
             @Override
             public void handleEvent(Event event) {
                 if (!textNumPublishers.getText().replaceAll("\\s+", "").equals("")) {
@@ -981,23 +981,23 @@ public class GUI_RTIPerftest {
                 } else {
                     mapParameter.put("-sidMultiSubTest", "");
                 }
-                shellAdvancedOptionSub.dispose();
+                shellAdvancedOptionsSub.dispose();
             }
         });
     }
 
     /**
-     * Display new window with the Advanced Option of the Publisher
+     * Display new window with the Advanced Options of the Publisher
      *
      */
-    private void display_pub_advanced_option() {
+    private void display_pub_advanced_options() {
 
-        Shell shellAdvancedOptionPub = new Shell(shell.getDisplay(), SWT.CLOSE);
-        shellAdvancedOptionPub.setText("Subscriber Advanced Option");
-        shellAdvancedOptionPub.setLayout(new GridLayout(3, false));
+        Shell shellAdvancedOptionsPub = new Shell(shell.getDisplay(), SWT.CLOSE);
+        shellAdvancedOptionsPub.setText("Publisher Advanced Options");
+        shellAdvancedOptionsPub.setLayout(new GridLayout(3, false));
 
         // NumIter LatencyCount LatencyTest Scan writerStats
-        Group groupLatencyTest = new Group(shellAdvancedOptionPub, SWT.NONE);
+        Group groupLatencyTest = new Group(shellAdvancedOptionsPub, SWT.NONE);
         groupLatencyTest.setLayout(new GridLayout(7, false));
         groupLatencyTest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 3, 1));
         Label labelNumIter = new Label(groupLatencyTest, SWT.NONE);
@@ -1024,7 +1024,7 @@ public class GUI_RTIPerftest {
                 "Enable extra messages showing the Pulled Sample Count of the Writer in the Publisher side.");
 
         // BatchSize
-        Group groupBatchSize = new Group(shellAdvancedOptionPub, SWT.NONE);
+        Group groupBatchSize = new Group(shellAdvancedOptionsPub, SWT.NONE);
         groupBatchSize.setLayout(new GridLayout(2, false));
         groupBatchSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelBatchSize = new Label(groupBatchSize, SWT.NONE);
@@ -1035,7 +1035,7 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textBatchSize);
 
         // Execution Time
-        Group groupExecuteionTime = new Group(shellAdvancedOptionPub, SWT.NONE);
+        Group groupExecuteionTime = new Group(shellAdvancedOptionsPub, SWT.NONE);
         groupExecuteionTime.setLayout(new GridLayout(2, false));
         groupExecuteionTime.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelExecuteionTime = new Label(groupExecuteionTime, SWT.NONE);
@@ -1048,7 +1048,7 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textExecuteionTime);
 
         // SendQueueSize
-        Group groupSendQueueSize = new Group(shellAdvancedOptionPub, SWT.NONE);
+        Group groupSendQueueSize = new Group(shellAdvancedOptionsPub, SWT.NONE);
         groupSendQueueSize.setLayout(new GridLayout(2, false));
         groupSendQueueSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelSendQueueSize = new Label(groupSendQueueSize, SWT.NONE);
@@ -1059,7 +1059,7 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textSendQueueSize);
 
         // HeartbeatPeriod
-        Group groupHeartbeatPeriod = new Group(shellAdvancedOptionPub, SWT.NONE);
+        Group groupHeartbeatPeriod = new Group(shellAdvancedOptionsPub, SWT.NONE);
         groupHeartbeatPeriod.setLayout(new GridLayout(2, false));
         groupHeartbeatPeriod.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelHeartbeatPeriod = new Label(groupHeartbeatPeriod, SWT.NONE);
@@ -1071,7 +1071,7 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textHeartbeatPeriod);
 
         // two check button EnableAutoThrottle EnableTurboMode
-        Group groupEnableAutoThrottleEnableTurboMode = new Group(shellAdvancedOptionPub, SWT.NONE);
+        Group groupEnableAutoThrottleEnableTurboMode = new Group(shellAdvancedOptionsPub, SWT.NONE);
         groupEnableAutoThrottleEnableTurboMode.setLayout(new GridLayout(2, false));
         groupEnableAutoThrottleEnableTurboMode.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Button enableAutoThrottle = new Button(groupEnableAutoThrottleEnableTurboMode, SWT.CHECK);
@@ -1082,7 +1082,7 @@ public class GUI_RTIPerftest {
         enableTurboMode.setToolTipText("Enables the Turbo Mode feature.");
 
         // PidMultiPubTest
-        Group groupPidMultiPubTest = new Group(shellAdvancedOptionPub, SWT.NONE);
+        Group groupPidMultiPubTest = new Group(shellAdvancedOptionsPub, SWT.NONE);
         groupPidMultiPubTest.setLayout(new GridLayout(2, false));
         groupPidMultiPubTest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelPidMultiPubTest = new Label(groupPidMultiPubTest, SWT.NONE);
@@ -1094,7 +1094,7 @@ public class GUI_RTIPerftest {
         textPidMultiPubTest.setText("0");
 
         // PubRate Sleep Spin
-        Group groupPubRate = new Group(shellAdvancedOptionPub, SWT.NONE);
+        Group groupPubRate = new Group(shellAdvancedOptionsPub, SWT.NONE);
         groupPubRate.setLayout(new GridLayout(6, false));
         groupPubRate.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
         Label labelPubRate = new Label(groupPubRate, SWT.NONE);
@@ -1117,7 +1117,7 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textSpin);
 
         // NumSubscribers
-        Group groupNumSubscribers = new Group(shellAdvancedOptionPub, SWT.NONE);
+        Group groupNumSubscribers = new Group(shellAdvancedOptionsPub, SWT.NONE);
         groupNumSubscribers.setLayout(new GridLayout(2, false));
         groupNumSubscribers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelNumSubscribers = new Label(groupNumSubscribers, SWT.NONE);
@@ -1129,9 +1129,9 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textNumSubscribers);
         textNumSubscribers.setText("1");
 
-        shellAdvancedOptionPub.open();
-        shellAdvancedOptionPub.pack();
-        shellAdvancedOptionPub.addListener(SWT.Close, new Listener() {
+        shellAdvancedOptionsPub.open();
+        shellAdvancedOptionsPub.pack();
+        shellAdvancedOptionsPub.addListener(SWT.Close, new Listener() {
             @Override
             public void handleEvent(Event event) {
                 if (!textBatchSize.getText().replaceAll("\\s+", "").equals("")) {
@@ -1220,7 +1220,7 @@ public class GUI_RTIPerftest {
                 } else {
                     mapParameter.put("-numSubscribers", "");
                 }
-                shellAdvancedOptionPub.dispose();
+                shellAdvancedOptionsPub.dispose();
             }
         });
     }
@@ -1229,14 +1229,14 @@ public class GUI_RTIPerftest {
      * Display new window with the Advanced Option of the Subscriber
      *
      */
-    private void display_execution_advanced_option() {
+    private void display_execution_advanced_options() {
 
-        Shell shellAdvancedOptionExecution = new Shell(shell.getDisplay(), SWT.CLOSE);
-        shellAdvancedOptionExecution.setText("Advanced Option");
-        shellAdvancedOptionExecution.setLayout(new GridLayout(4, false));
+        Shell shellAdvancedOptionsExecution = new Shell(shell.getDisplay(), SWT.CLOSE);
+        shellAdvancedOptionsExecution.setText("Advanced Options");
+        shellAdvancedOptionsExecution.setLayout(new GridLayout(4, false));
 
         // Date Length
-        Group groupDataLen = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        Group groupDataLen = new Group(shellAdvancedOptionsExecution, SWT.NONE);
         groupDataLen.setLayout(new GridLayout(4, false));
         groupDataLen.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelDataLen = new Label(groupDataLen, SWT.NONE);
@@ -1248,7 +1248,7 @@ public class GUI_RTIPerftest {
         textDataLen.setText("100");
 
         // Three radio for the transport
-        Group groupTransport = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        Group groupTransport = new Group(shellAdvancedOptionsExecution, SWT.NONE);
         groupTransport.setLayout(new GridLayout(4, false));
         groupTransport.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
         groupTransport.setText("Transport");
@@ -1264,7 +1264,7 @@ public class GUI_RTIPerftest {
         TCP.setToolTipText("Enable the TCP transport.");
 
         // check button for the dynamic
-        Group groupDynamic = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        Group groupDynamic = new Group(shellAdvancedOptionsExecution, SWT.NONE);
         groupDynamic.setLayout(new GridLayout(4, false));
         groupDynamic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Button dynamic = new Button(groupDynamic, SWT.CHECK);
@@ -1273,7 +1273,7 @@ public class GUI_RTIPerftest {
         dynamic.setToolTipText("Run using the Dynamic Data API functions instead of the rtiddsgen generated calls.");
 
         // Combo Durability
-        Group groupDurability = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        Group groupDurability = new Group(shellAdvancedOptionsExecution, SWT.NONE);
         groupDurability.setLayout(new GridLayout(2, false));
         groupDurability.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelDurability = new Label(groupDurability, SWT.NONE);
@@ -1286,7 +1286,7 @@ public class GUI_RTIPerftest {
 
         // one CHECK button for the multicast and a label and input for
         // multicast address
-        Group groupMulticast = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        Group groupMulticast = new Group(shellAdvancedOptionsExecution, SWT.NONE);
         groupMulticast.setLayout(new GridLayout(3, false));
         groupMulticast.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
         Button multicast = new Button(groupMulticast, SWT.CHECK);
@@ -1302,7 +1302,7 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textMulticast);
 
         // Nic
-        Group groupNic = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        Group groupNic = new Group(shellAdvancedOptionsExecution, SWT.NONE);
         groupNic.setLayout(new GridLayout(2, false));
         groupNic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelNic = new Label(groupNic, SWT.NONE);
@@ -1314,7 +1314,7 @@ public class GUI_RTIPerftest {
         listTextParameter.add(textNic);
 
         // check button for the useReadThread and for CPU
-        Group groupUseReadThreadAndCpu = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        Group groupUseReadThreadAndCpu = new Group(shellAdvancedOptionsExecution, SWT.NONE);
         groupUseReadThreadAndCpu.setLayout(new GridLayout(2, false));
         groupUseReadThreadAndCpu.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
         Button useReadThread = new Button(groupUseReadThreadAndCpu, SWT.CHECK);
@@ -1327,7 +1327,7 @@ public class GUI_RTIPerftest {
         cpu.setToolTipText("Display the cpu used by the RTI Perftest process.");
 
         // Combo FlowController
-        Group groupFlowController = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        Group groupFlowController = new Group(shellAdvancedOptionsExecution, SWT.NONE);
         groupFlowController.setLayout(new GridLayout(2, false));
         groupFlowController.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
         Label labelFlowController = new Label(groupFlowController, SWT.NONE);
@@ -1341,7 +1341,7 @@ public class GUI_RTIPerftest {
 
         // Initial peers
         // TODO add several initials peers, like a list
-        Group groupInitalPeers = new Group(shellAdvancedOptionExecution, SWT.NONE);
+        Group groupInitalPeers = new Group(shellAdvancedOptionsExecution, SWT.NONE);
         groupInitalPeers.setLayout(new GridLayout(2, false));
         groupInitalPeers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelInitalPeers = new Label(groupInitalPeers, SWT.NONE);
@@ -1352,9 +1352,9 @@ public class GUI_RTIPerftest {
         textInitalPeers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textInitalPeers);
 
-        shellAdvancedOptionExecution.open();
-        shellAdvancedOptionExecution.pack();
-        shellAdvancedOptionExecution.addListener(SWT.Close, new Listener() {
+        shellAdvancedOptionsExecution.open();
+        shellAdvancedOptionsExecution.pack();
+        shellAdvancedOptionsExecution.addListener(SWT.Close, new Listener() {
             @Override
             public void handleEvent(Event event) {
                 if (TCP.getSelection()) {
@@ -1418,7 +1418,7 @@ public class GUI_RTIPerftest {
                 } else {
                     mapParameter.put("-flowController", "");
                 }
-                shellAdvancedOptionExecution.dispose();
+                shellAdvancedOptionsExecution.dispose();
             }
         });
     }
@@ -1548,22 +1548,22 @@ public class GUI_RTIPerftest {
         keyed.setText("keyed");
         keyed.setToolTipText("Specify the use of a keyed type.");
 
-        // five buttons for compile and advance option and security option
+        // five buttons for compile and advanced options and security option
         Group groupButtons = new Group(compositeExecution, SWT.NONE);
         groupButtons.setLayout(new GridLayout(4, false));
         groupButtons.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
-        Button btnAdvancedOptionExecution = new Button(groupButtons, SWT.PUSH);
-        btnAdvancedOptionExecution.setText("Advanced Option");
-        btnAdvancedOptionExecution.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        Button btnAdvancedOptionPub = new Button(groupButtons, SWT.PUSH);
-        btnAdvancedOptionPub.setText("Advanced Option Pub");
-        btnAdvancedOptionPub.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        Button btnAdvancedOptionSub = new Button(groupButtons, SWT.PUSH);
-        btnAdvancedOptionSub.setText("Advanced Option Sub");
-        btnAdvancedOptionSub.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        btnAdvancedOptionSub.setEnabled(false);
+        Button btnAdvancedOptionsExecution = new Button(groupButtons, SWT.PUSH);
+        btnAdvancedOptionsExecution.setText("Advanced Options");
+        btnAdvancedOptionsExecution.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button btnAdvancedOptionsPub = new Button(groupButtons, SWT.PUSH);
+        btnAdvancedOptionsPub.setText("Advanced Options Pub");
+        btnAdvancedOptionsPub.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        Button btnAdvancedOptionsSub = new Button(groupButtons, SWT.PUSH);
+        btnAdvancedOptionsSub.setText("Advanced Options Sub");
+        btnAdvancedOptionsSub.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        btnAdvancedOptionsSub.setEnabled(false);
         Button btnSecureOption = new Button(groupButtons, SWT.PUSH);
-        btnSecureOption.setText("Secure Option");
+        btnSecureOption.setText("Secure Options");
         btnSecureOption.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
 
         // two buttons for run and stop and a checkbox for the real time display
@@ -1641,7 +1641,7 @@ public class GUI_RTIPerftest {
                 }
 
                 if (!language_java.getSelection() && comboPlatform.getText().replaceAll("\\s+", "").equals("")) {
-                    show_error("The platfomr of the execution is necessary.");
+                    show_error("The platform of the execution is necessary.");
                     return;
                 } else {
                     mapParameter.put("platform", comboPlatform.getText().replaceAll("\\s+", ""));
@@ -1705,50 +1705,50 @@ public class GUI_RTIPerftest {
             }
         });
 
-        // listener button advance option execution
-        btnAdvancedOptionExecution.addSelectionListener(new SelectionAdapter() {
+        // listener button advanced options execution
+        btnAdvancedOptionsExecution.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                System.out.println("Button advance option execution clicked");
-                display_execution_advanced_option();
+                System.out.println("Button advanced options execution clicked");
+                display_execution_advanced_options();
             }
         });
 
-        // listener button advance option pub
-        btnAdvancedOptionPub.addSelectionListener(new SelectionAdapter() {
+        // listener button advanced options pub
+        btnAdvancedOptionsPub.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                System.out.println("Button advance option pub clicked");
-                display_pub_advanced_option();
+                System.out.println("Button advanced options pub clicked");
+                display_pub_advanced_options();
             }
         });
 
-        // listener button advance option sub
-        btnAdvancedOptionSub.addSelectionListener(new SelectionAdapter() {
+        // listener button advanced options sub
+        btnAdvancedOptionsSub.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                System.out.println("Button advance option sub clicked");
-                display_sub_advanced_option();
+                System.out.println("Button advanced options sub clicked");
+                display_sub_advanced_options();
             }
         });
 
-        // Activate Pub advance option
+        // Activate Pub advanced options
         pub.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 System.out.println("Button pub clicked");
-                btnAdvancedOptionSub.setEnabled(false);
-                btnAdvancedOptionPub.setEnabled(true);
+                btnAdvancedOptionsSub.setEnabled(false);
+                btnAdvancedOptionsPub.setEnabled(true);
             }
         });
 
-        // Activate Sub advance option
+        // Activate Sub advanced options
         sub.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 System.out.println("Button sub clicked");
-                btnAdvancedOptionPub.setEnabled(false);
-                btnAdvancedOptionSub.setEnabled(true);
+                btnAdvancedOptionsPub.setEnabled(false);
+                btnAdvancedOptionsSub.setEnabled(true);
             }
         });
 
