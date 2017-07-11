@@ -676,6 +676,7 @@ public class GUI_RTIPerftest {
         labelPerftest.setToolTipText("Path to the RTI perftest bundle");
         Text textPerftest = new Text(groupPerftestPath, SWT.BORDER);
         textPerftest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textPerftest.setMessage("/home/ajimenez/github/rtiperftest_test");
         listTextParameter.add(textPerftest);
         textPerftest.setText("/home/ajimenez/github/rtiperftest_test");
         Button openPerftestPath = new Button(groupPerftestPath, SWT.PUSH);
@@ -703,6 +704,7 @@ public class GUI_RTIPerftest {
         textNDDSHOME.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textNDDSHOME);
         textNDDSHOME.setText("/home/ajimenez/rti_connext_dds-5.2.7");
+        textNDDSHOME.setMessage("/home/ajimenez/rti_connext_dds-5.2.7");
         Button openNDDSHOME = new Button(groupNDDSHOME, SWT.PUSH);
         openNDDSHOME.setText("Open");
         openNDDSHOME.addSelectionListener(new SelectionAdapter() {
@@ -953,7 +955,7 @@ public class GUI_RTIPerftest {
         Text textNumPublishers = new Text(shellAdvancedOptionsSub, SWT.BORDER);
         textNumPublishers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textNumPublishers);
-        textNumPublishers.setText("1");
+        textNumPublishers.setMessage("1");
 
         // sidMultiSubTest
         Label labelSidMultiSubTest = new Label(shellAdvancedOptionsSub, SWT.NONE);
@@ -962,7 +964,7 @@ public class GUI_RTIPerftest {
         Text textSidMultiSubTest = new Text(shellAdvancedOptionsSub, SWT.BORDER);
         textSidMultiSubTest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textSidMultiSubTest);
-        textSidMultiSubTest.setText("0");
+        textSidMultiSubTest.setMessage("0");
 
         shellAdvancedOptionsSub.open();
         shellAdvancedOptionsSub.pack();
@@ -1005,12 +1007,14 @@ public class GUI_RTIPerftest {
         labelNumIter.setToolTipText("Number of samples to send.");
         Text textNumIter = new Text(groupLatencyTest, SWT.BORDER);
         textNumIter.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textNumIter.setMessage("100000000");
         listTextParameter.add(textNumIter);
         Label labelLatencyCount = new Label(groupLatencyTest, SWT.NONE);
         labelLatencyCount.setText("Latency Count");
         labelLatencyCount.setToolTipText("Number samples to send before a latency ping packet is sent.");
         Text textLatencyCount = new Text(groupLatencyTest, SWT.BORDER);
         textLatencyCount.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textLatencyCount.setMessage("1");
         listTextParameter.add(textLatencyCount);
         Button latencyTest = new Button(groupLatencyTest, SWT.CHECK);
         latencyTest.setText("Latency Test");
@@ -1032,6 +1036,7 @@ public class GUI_RTIPerftest {
         labelBatchSize.setToolTipText("Enable batching and set the maximum batched message size.");
         Text textBatchSize = new Text(groupBatchSize, SWT.BORDER);
         textBatchSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textBatchSize.setMessage("8192");
         listTextParameter.add(textBatchSize);
 
         // Execution Time
@@ -1044,7 +1049,7 @@ public class GUI_RTIPerftest {
                 "Allows you to limit the test duration by specifying the number of seconds to run the test.");
         Text textExecuteionTime = new Text(groupExecuteionTime, SWT.BORDER);
         textExecuteionTime.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        textExecuteionTime.setText("120");
+        textExecuteionTime.setMessage("120");
         listTextParameter.add(textExecuteionTime);
 
         // SendQueueSize
@@ -1056,6 +1061,7 @@ public class GUI_RTIPerftest {
         labelSendQueueSize.setToolTipText("Size of the send queue.");
         Text textSendQueueSize = new Text(groupSendQueueSize, SWT.BORDER);
         textSendQueueSize.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textSendQueueSize.setMessage("50");
         listTextParameter.add(textSendQueueSize);
 
         // HeartbeatPeriod
@@ -1067,7 +1073,7 @@ public class GUI_RTIPerftest {
         labelHeartbeatPeriod.setToolTipText("The period at which the publishing application will send heartbeats.");
         Text textHeartbeatPeriod = new Text(groupHeartbeatPeriod, SWT.BORDER);
         textHeartbeatPeriod.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-        textHeartbeatPeriod.setText("0:10000000");
+        textHeartbeatPeriod.setMessage("0:10000000");
         listTextParameter.add(textHeartbeatPeriod);
 
         // two check button EnableAutoThrottle EnableTurboMode
@@ -1086,12 +1092,12 @@ public class GUI_RTIPerftest {
         groupPidMultiPubTest.setLayout(new GridLayout(2, false));
         groupPidMultiPubTest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         Label labelPidMultiPubTest = new Label(groupPidMultiPubTest, SWT.NONE);
-        labelPidMultiPubTest.setText("ID of Subscriber");
+        labelPidMultiPubTest.setText("ID of Publisher");
         labelPidMultiPubTest.setToolTipText("ID of the subscriber in a multi-subscriber test.");
         Text textPidMultiPubTest = new Text(groupPidMultiPubTest, SWT.BORDER);
         textPidMultiPubTest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textPidMultiPubTest);
-        textPidMultiPubTest.setText("0");
+        textPidMultiPubTest.setMessage("0");
 
         // PubRate Sleep Spin
         Group groupPubRate = new Group(shellAdvancedOptionsPub, SWT.NONE);
@@ -1102,6 +1108,7 @@ public class GUI_RTIPerftest {
         labelPubRate.setToolTipText("Limit the throughput to the specified number of samples per second.");
         Text textPubRate = new Text(groupPubRate, SWT.BORDER);
         textPubRate.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textPubRate.setMessage("100");
         listTextParameter.add(textPubRate);
         Label labelSleep = new Label(groupPubRate, SWT.NONE);
         labelSleep.setText("Sleep");
@@ -1127,7 +1134,7 @@ public class GUI_RTIPerftest {
         Text textNumSubscribers = new Text(groupNumSubscribers, SWT.BORDER);
         textNumSubscribers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textNumSubscribers);
-        textNumSubscribers.setText("1");
+        textNumSubscribers.setMessage("1");
 
         shellAdvancedOptionsPub.open();
         shellAdvancedOptionsPub.pack();
@@ -1245,7 +1252,7 @@ public class GUI_RTIPerftest {
         Text textDataLen = new Text(groupDataLen, SWT.BORDER);
         textDataLen.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textDataLen);
-        textDataLen.setText("100");
+        textDataLen.setMessage("100");
 
         // Three radio for the transport
         Group groupTransport = new Group(shellAdvancedOptionsExecution, SWT.NONE);
@@ -1299,6 +1306,7 @@ public class GUI_RTIPerftest {
         labelMulticast.setToolTipText("Specify the multicast receive address for receiving user data.");
         Text textMulticast = new Text(groupMulticast, SWT.BORDER);
         textMulticast.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textMulticast.setMessage("127.0.0.1");
         listTextParameter.add(textMulticast);
 
         // Nic
@@ -1311,6 +1319,7 @@ public class GUI_RTIPerftest {
                 "Restrict RTI Connext DDS to sending output through this interface. This can be the IP address of any available network interface on the machine.");
         Text textNic = new Text(groupNic, SWT.BORDER);
         textNic.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textNic.setMessage("127.0.0.1");
         listTextParameter.add(textNic);
 
         // check button for the useReadThread and for CPU
@@ -1350,6 +1359,7 @@ public class GUI_RTIPerftest {
                 "Adds a peer to the peer host address list. This argument may be repeated to indicate multiple peers.");
         Text textInitalPeers = new Text(groupInitalPeers, SWT.BORDER);
         textInitalPeers.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
+        textInitalPeers.setMessage("127.0.0.1");
         listTextParameter.add(textInitalPeers);
 
         shellAdvancedOptionsExecution.open();
@@ -1452,6 +1462,7 @@ public class GUI_RTIPerftest {
         textPerftest.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textPerftest);
         textPerftest.setText("/home/ajimenez/github/rtiperftest_test");
+        textPerftest.setMessage("/home/ajimenez/github/rtiperftest_test");
         Button openPerftestPath = new Button(groupPerftestPath, SWT.PUSH);
         openPerftestPath.setText("Open");
         openPerftestPath.addSelectionListener(new SelectionAdapter() {
@@ -1500,7 +1511,7 @@ public class GUI_RTIPerftest {
         Text textDomain = new Text(groupDomain, SWT.BORDER);
         textDomain.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textDomain);
-        textDomain.setText("0");
+        textDomain.setMessage("0");
 
         // four radio for the languages
         Group groupLanguage = new Group(compositeExecution, SWT.NONE);
@@ -1543,7 +1554,7 @@ public class GUI_RTIPerftest {
         Text textInstances = new Text(groupKey, SWT.BORDER);
         textInstances.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textInstances);
-        textInstances.setText("1");
+        textInstances.setMessage("1");
         Button keyed = new Button(groupKey, SWT.CHECK);
         keyed.setText("keyed");
         keyed.setToolTipText("Specify the use of a keyed type.");
