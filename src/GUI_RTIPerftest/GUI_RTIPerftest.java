@@ -153,7 +153,7 @@ public class GUI_RTIPerftest {
 
     private static OSType detectedOS; // cached result of OS detection
     private Shell shell;
-    private TabFolder folder;
+    private TabFolder folder, folder_output;
     private ArrayList<Text> listTextParameter; // create list of text elements
     private Map<String, String> mapParameter;// create dictionary with parameter
     private String[] possiblePlatform;
@@ -268,8 +268,8 @@ public class GUI_RTIPerftest {
         } else { // if (executionType == ExecutionType.Pub || executionType ==
                  // ExecutionType.Sub)
             chart.reset();
-            exec.setStreamHandler(new PumpStreamHandler(
-                    new StyledTextOutputStreamExecution(outputTextField, chart, executionType, display_real_time)));
+            exec.setStreamHandler(new PumpStreamHandler(new StyledTextOutputStreamExecution(outputTextField, chart,
+                    executionType, display_real_time, folder_output)));
         }
         exec.setWatchdog(new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT));
         new Thread(new Runnable() {
@@ -1608,9 +1608,10 @@ public class GUI_RTIPerftest {
         textCommand.computeSize(100, 100, true);
         listTextParameter.add(textCommand);
 
-        TabFolder folder_output = new TabFolder(compositeExecution, SWT.NONE);
+        folder_output = new TabFolder(compositeExecution, SWT.NONE);
         folder_output.setLayout(new GridLayout(4, false));
         folder_output.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1));
+        folder_output.setBackground(new Color(Display.getCurrent(), 225, 225, 234));
 
         // text output command
         TabItem tabExecuteOutputText = new TabItem(folder_output, SWT.NONE);
@@ -1704,6 +1705,8 @@ public class GUI_RTIPerftest {
                     mapParameter.put("-instances", "");
                 }
                 // TODO cleanInput(outputTextField,listTextCompile);
+                folder_output.setBackground(new Color(Display.getCurrent(), 209, 209, 224)); // Default
+                                                                                             // color
                 if (!get_paramenter("-pub").isEmpty()) {
                     executePerftest(textCommand, outputTextField, language, ExecutionType.Pub, chart,
                             display_real_time.getSelection());
@@ -1740,6 +1743,14 @@ public class GUI_RTIPerftest {
             public void widgetSelected(SelectionEvent e) {
                 System.out.println("Button advanced options sub clicked");
                 display_sub_advanced_options();
+            }
+        });
+
+        // listener button SecureOption
+        btnSecureOption.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                System.out.println("Button btnSecureOption clicked");
             }
         });
 
@@ -1839,9 +1850,12 @@ public class GUI_RTIPerftest {
         private boolean display_end;
         private Double instant_value;
         private Double ave_value;
+        private boolean incompatibility;
+        private TabFolder folder_output;
+        private String[] key_error;
 
         public StyledTextOutputStreamExecution(StyledText _outputControl, Chart_RTIPerftest _chart, ExecutionType _type,
-                boolean _display_real_time) {
+                boolean _display_real_time, TabFolder _folder_output) {
             outputControl = _outputControl;
             chart = _chart;
             type = _type;
@@ -1849,6 +1863,9 @@ public class GUI_RTIPerftest {
             display_end = false;
             instant_value = -1.0;
             ave_value = -1.0;
+            incompatibility = false;
+            folder_output = _folder_output;
+            key_error = new String[] { "incompatible", "Problem", "ERROR" };
         }
 
         @Override
@@ -1875,10 +1892,18 @@ public class GUI_RTIPerftest {
                             .substring(line.indexOf("Mbps(ave):") + 10, line.indexOf("Lost:")).replaceAll("\\s+", ""));
                 }
             }
-
             if (line.contains("Length:")) { // Always display at the end
                 display_end = true;
             }
+            if (display_real_time) {
+                for (String element : key_error) {
+                    if (line.contains(element)) {
+                        incompatibility = true;
+                        break;
+                    }
+                }
+            }
+
             Display.getDefault().syncExec(new Runnable() {
                 public void run() {
                     String lineCopy = line;
@@ -1891,6 +1916,9 @@ public class GUI_RTIPerftest {
                     }
                     if (display_real_time) {
                         outputControl.append(lineCopy + "\n");
+                        if (incompatibility) {
+                            folder_output.setBackground(new Color(Display.getCurrent(), 255, 102, 102));
+                        }
                     } else if (display_end) {
                         chart.redraw();
                         outputControl.append(lineCopy + "\n");
