@@ -8,11 +8,6 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
-import org.swtchart.Chart;
-import org.swtchart.ILineSeries;
-import org.swtchart.ILineSeries.PlotSymbolType;
-import org.swtchart.LineStyle;
-import org.swtchart.ISeries.SeriesType;
 import org.eclipse.swt.custom.StyledText;
 
 import java.util.HashMap;
@@ -37,6 +32,9 @@ import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.LogOutputStream;
 import org.apache.commons.exec.PumpStreamHandler;
+import GUI_RTIPerftest.ListPlatform;
+import GUI_RTIPerftest.Chart_RTIPerftest;
+import GUI_RTIPerftest.OSType;
 
 public class GUI_RTIPerftest {
 
@@ -48,108 +46,11 @@ public class GUI_RTIPerftest {
     };
 
     /**
-     * types of Operating Systems
-     */
-    public enum OSType {
-        Windows, Darwin, Linux, Other
-    };
-
-    /**
      * types of Supported Languages
      */
     public enum Language {
         cpp, cpp03, cs, java
     };
-
-    public class Chart_RTIPerftest {
-        private Chart chart;
-        private ArrayList<Double> data_instant;
-        private ArrayList<Double> data_ave;
-        private ILineSeries lineSeries;
-        private ILineSeries lineSeriesAve;
-
-        public Chart_RTIPerftest(Composite parent) {
-            chart = new Chart(parent, SWT.None);
-            chart.getAxisSet().getXAxis(0).getTick().setVisible(false);
-            data_instant = new ArrayList<Double>();
-            data_ave = new ArrayList<Double>();
-        }
-
-        /**
-         * update chart
-         * 
-         * @param type
-         *            ExecutionType
-         */
-        public void setType(ExecutionType type) {
-            if (type == ExecutionType.Sub) {
-                // set titles
-                chart.getTitle().setText("Throughtput");
-                chart.getAxisSet().getXAxis(0).getTitle().setText("Time");
-                chart.getAxisSet().getYAxis(0).getTitle().setText("Mbps");
-                lineSeries = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "Mbps");
-                lineSeriesAve = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "Mbps Ave");
-            } else { // if (type == ExecutionType.Pub){
-                // set titles
-                chart.getTitle().setText("Latency");
-                chart.getAxisSet().getXAxis(0).getTitle().setText("Time");
-                chart.getAxisSet().getYAxis(0).getTitle().setText("Us");
-                lineSeries = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "Us");
-                lineSeriesAve = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, "Us Ave");
-            }
-            lineSeriesAve.setLineColor(Display.getDefault().getSystemColor(SWT.COLOR_RED));
-            lineSeriesAve.setSymbolType(PlotSymbolType.NONE);
-        }
-
-        /**
-         * reset chart
-         * 
-         */
-        public void reset() {
-            data_instant.clear();
-            data_ave.clear();
-            if (chart.getSeriesSet().getSeries().length > 0) {
-                System.out.println("Reset chart");
-                chart.getSeriesSet().deleteSeries(lineSeries.getId());
-                chart.getSeriesSet().deleteSeries(lineSeriesAve.getId());
-                this.redraw();
-            }
-        }
-
-        /**
-         * update array
-         * 
-         * @param instant_value
-         *            double
-         */
-        public void update(double instant_value, double ave_value) {
-            data_instant.add(instant_value);
-            data_ave.add(ave_value);
-            // create line series
-            lineSeries.setYSeries(toPrimitive(data_instant.toArray(new Double[data_instant.size()])));
-            lineSeriesAve.setYSeries(toPrimitive(data_ave.toArray(new Double[data_ave.size()])));
-        }
-
-        /**
-         * update chart, redraw
-         * 
-         * @param instant_value
-         *            double
-         */
-        public void redraw() {
-            chart.redraw();
-            // adjust the axis range
-            chart.getAxisSet().adjustRange();
-        }
-
-        private double[] toPrimitive(Double[] array) {
-            double[] result = new double[array.length];
-            for (int i = 0; i < array.length; i++) {
-                result[i] = array[i].doubleValue();
-            }
-            return result;
-        }
-    }
 
     private static OSType detectedOS; // cached result of OS detection
     private Shell shell;
@@ -160,11 +61,13 @@ public class GUI_RTIPerftest {
     private Map<String, String> listDurability;
     private String[] listFlowController;
     private DefaultExecutor exec;
+    private ListPlatform listPlatform;
 
     /**
      * Constructor
      */
     public GUI_RTIPerftest() {
+        listPlatform = new ListPlatform(getOperatingSystemType());
         exec = new DefaultExecutor();
         set_all_possible_platform();
         listTextParameter = new ArrayList<Text>();
@@ -210,15 +113,25 @@ public class GUI_RTIPerftest {
      * Set the list of Platform according to the OS
      */
     private void set_all_possible_platform() {
-        if (getOperatingSystemType() == OSType.Linux) {
-            possiblePlatform = new String[] { "", "x64Linux3gcc5.4.0", "x64Linux3gcc4.8.2" };
-        } else if (getOperatingSystemType() == OSType.Windows) {
-            possiblePlatform = new String[] { "", "x64Win64VS2015" };
-        } else if (getOperatingSystemType() == OSType.Darwin) {
-            possiblePlatform = new String[] { "", "x64Darwin16clang8.0" };
+        if (System.getenv("NDDSHOME") != null && System.getenv("NDDSHOME").contains("5.3")) {
+            // TODO check that it is 5.3.0 >=
+            // get platform
+            listPlatform.setNDDSHOME(System.getenv("NDDSHOME"));
+            listPlatform.getPlatform();
+            possiblePlatform = (String[]) listPlatform.getListPlaform("C++").toArray(new String[0]);
         } else {
-            possiblePlatform = new String[] { "", "x64Win64VS2015", "x64Darwin16clang8.0", "x64Linux3gcc5.4.0",
-                    "x64Linux3gcc4.8.2" };
+            // TODO type here the most important Platform
+            System.out.format("NDDSHOME is not define");
+            if (getOperatingSystemType() == OSType.Linux) {
+                possiblePlatform = new String[] { "", "x64Linux3gcc5.4.0", "x64Linux3gcc4.8.2" };
+            } else if (getOperatingSystemType() == OSType.Win) {
+                possiblePlatform = new String[] { "", "x64Win64VS2015" };
+            } else if (getOperatingSystemType() == OSType.Darwin) {
+                possiblePlatform = new String[] { "", "x64Darwin16clang8.0" };
+            } else {
+                possiblePlatform = new String[] { "", "x64Win64VS2015", "x64Darwin16clang8.0", "x64Linux3gcc5.4.0",
+                        "x64Linux3gcc4.8.2" };
+            }
         }
         Arrays.sort(possiblePlatform);
     }
@@ -235,7 +148,7 @@ public class GUI_RTIPerftest {
             if ((OS.indexOf("mac") >= 0) || (OS.indexOf("darwin") >= 0)) {
                 detectedOS = OSType.Darwin;
             } else if (OS.indexOf("win") >= 0) {
-                detectedOS = OSType.Windows;
+                detectedOS = OSType.Win;
             } else if (OS.indexOf("nux") >= 0) {
                 detectedOS = OSType.Linux;
             } else {
@@ -305,7 +218,7 @@ public class GUI_RTIPerftest {
         // check if Linux or Win or Darwin
         if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
             command = "./build.sh";
-        } else if (getOperatingSystemType() == OSType.Windows
+        } else if (getOperatingSystemType() == OSType.Win
                 || get_paramenter("--platform").toLowerCase().contains("win")) {
             command = "/build.bat";
             command += get_paramenter("--skip-cs-build");
@@ -364,7 +277,7 @@ public class GUI_RTIPerftest {
                 command += "Release/perftest_java.sh";
                 break;
             }
-        } else if (getOperatingSystemType() == OSType.Windows
+        } else if (getOperatingSystemType() == OSType.Win
                 || get_paramenter("--platform").toLowerCase().contains("win")) {
             switch (language) {
             case cpp:
@@ -418,8 +331,6 @@ public class GUI_RTIPerftest {
         command += get_paramenter("-multicast");
         command += get_paramenter("-multicastAddress");
         command += get_paramenter("-nic");
-        command += get_paramenter("-multicast");
-        command += get_paramenter("-multicastAddress");
         command += get_paramenter("-useReadThread");
         command += get_paramenter("-flowController");
         command += get_paramenter("-cpu");
@@ -472,7 +383,7 @@ public class GUI_RTIPerftest {
         // check if Linux or Win or Darwin
         if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
             command = "./build.sh --clean";
-        } else if (getOperatingSystemType() == OSType.Windows
+        } else if (getOperatingSystemType() == OSType.Win
                 || get_paramenter("--platform").toLowerCase().contains("win")) {
             command = "build.bat --clean";
         } else if (getOperatingSystemType() == OSType.Darwin
@@ -703,8 +614,11 @@ public class GUI_RTIPerftest {
         Text textNDDSHOME = new Text(groupNDDSHOME, SWT.BORDER);
         textNDDSHOME.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         listTextParameter.add(textNDDSHOME);
-        textNDDSHOME.setText("/home/ajimenez/rti_connext_dds-5.2.7");
-        textNDDSHOME.setMessage("/home/ajimenez/rti_connext_dds-5.2.7");
+        if (System.getenv("NDDSHOME") != null) {
+            textNDDSHOME.setText(System.getenv("NDDSHOME"));
+        } else {
+            System.out.format("NDDSHOME is not define");
+        }
         Button openNDDSHOME = new Button(groupNDDSHOME, SWT.PUSH);
         openNDDSHOME.setText("Open");
         openNDDSHOME.addSelectionListener(new SelectionAdapter() {
@@ -1801,7 +1715,6 @@ public class GUI_RTIPerftest {
 
     private static class StyledTextOutputStreamCompile extends LogOutputStream {
         private StyledText outputControl;
-        private String[][] replacements;
         private Map<String, Color> colors;// create dictionary with parameter
 
         private int c;
