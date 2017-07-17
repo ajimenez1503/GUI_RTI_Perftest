@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -25,6 +26,7 @@ public class ListPlatform {
     private String ERR_PARSING_FILE;
     private boolean ready;
     private OSType detectedOS;
+    private List<String> possibleOS;
     
 
     public ListPlatform(OSType _detectedOS) {
@@ -33,6 +35,8 @@ public class ListPlatform {
         ERR_PARSING_FILE = "We coulnd't retreive the supported platforms from Code Generator";
         ready = false;
         detectedOS = _detectedOS;
+        possibleOS = new ArrayList<String>();
+        possibleOS.addAll(Arrays.asList( "C++", "C++03","C#","Java" ));
     }
     
     public void setNDDSHOME(String _NDDSHOME) {
@@ -102,26 +106,26 @@ public class ListPlatform {
                 if (languageNode.getNodeType() != Node.ELEMENT_NODE) {
                     continue;
                 }
+                if (possibleOS.contains(languageNode.getAttributes().item(0).getNodeValue())){
+                    NodeList platformNodes = languageNode.getChildNodes();
+                    List<String> platforms = new ArrayList<String>();
 
-                NodeList platformNodes = languageNode.getChildNodes();
-                List<String> platforms = new ArrayList<String>();
-
-                for (int j = 0; j < platformNodes.getLength(); j++) {
-                    Node platformNode = platformNodes.item(j);
-                    if (platformNode.getNodeType() != Node.ELEMENT_NODE) {
-                        continue;
+                    for (int j = 0; j < platformNodes.getLength(); j++) {
+                        Node platformNode = platformNodes.item(j);
+                        if (platformNode.getNodeType() != Node.ELEMENT_NODE) {
+                            continue;
+                        }
+                        if (platformNode.getFirstChild().getNodeValue().contains(detectedOS.name())) {
+                            platforms.add(platformNode.getFirstChild().getNodeValue());
+                        }
                     }
-                    if (platformNode.getFirstChild().getNodeValue().contains(detectedOS.name())) {
-                        platforms.add(platformNode.getFirstChild().getNodeValue());
-                    }
+                    supportedPlatforms.put(languageNode.getAttributes().item(0).getNodeValue(), platforms);
                 }
-                supportedPlatforms.put(languageNode.getAttributes().item(0).getNodeValue(), platforms);
             }
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
-
         return true;
     }
 
@@ -129,7 +133,7 @@ public class ListPlatform {
         while (!ready){ // TODO max time to wait
             System.out.println("wait for platform");
         }
-        if (languge == "C++" || languge == "C++03" || languge == "C#" || languge == "Java") {
+        if(possibleOS.contains(languge)) {
             return supportedPlatforms.get(languge);
         } else {
             return new ArrayList<String>();

@@ -11,6 +11,7 @@ import org.eclipse.swt.widgets.*;
 import org.eclipse.swt.custom.StyledText;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.awt.Desktop;
@@ -651,10 +652,11 @@ public class GUI_RTIPerftest {
         language_cpp.setSelection(true);
         Button language_cpp03 = new Button(groupLanguage, SWT.CHECK);
         language_cpp03.setText("CPP03");
-        Button language_cs = new Button(groupLanguage, SWT.CHECK);
-        language_cs.setText("C#");
         Button language_java = new Button(groupLanguage, SWT.CHECK);
         language_java.setText("JAVA");
+        Button language_cs = new Button(groupLanguage, SWT.CHECK);
+        language_cs.setText("C#");
+        language_cs.setEnabled(getOperatingSystemType() == OSType.Win);
 
         // two radio button for the linker and one check for the debug
         Group groupLinker = new Group(compositeCompile, SWT.NONE);
@@ -849,6 +851,61 @@ public class GUI_RTIPerftest {
                 compile_clean(textCommand, outputTextField);
             }
         });
+
+        SelectionAdapter languageListenerCompile = new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent event) {
+                System.out.println("Button language clicked Compile");
+                if (System.getenv("NDDSHOME") != null && System.getenv("NDDSHOME").contains("5.3")) {
+                    // TODO check that it is 5.3.0 >=
+                    List<String> newListPlaform = new ArrayList<String>();
+                    if (language_cpp.getSelection()) {
+                        if (newListPlaform.isEmpty()) {
+                            newListPlaform.addAll(listPlatform.getListPlaform("C++"));
+                        } else {
+                            newListPlaform.retainAll(listPlatform.getListPlaform("C++"));
+                        }
+                    }
+                    if (language_cpp03.getSelection()) {
+                        if (newListPlaform.isEmpty()) {
+                            newListPlaform.addAll(listPlatform.getListPlaform("C++03"));
+                        } else {
+                            newListPlaform.retainAll(listPlatform.getListPlaform("C++03"));
+                        }
+                    }
+                    if (language_java.getSelection()) {
+                        if (newListPlaform.isEmpty()) {
+                            newListPlaform.addAll(listPlatform.getListPlaform("Java"));
+                        } else {
+                            newListPlaform.retainAll(listPlatform.getListPlaform("Java"));
+                        }
+
+                    }
+                    if (language_cs.getSelection()) {
+                        if (newListPlaform.isEmpty()) {
+                            newListPlaform.addAll(listPlatform.getListPlaform("C#"));
+                        } else {
+                            newListPlaform.retainAll(listPlatform.getListPlaform("C#"));
+                        }
+                    }
+                    if (!newListPlaform.isEmpty()) {
+                        possiblePlatform = (String[]) newListPlaform.toArray(new String[0]);
+                        Arrays.sort(possiblePlatform);
+                        comboPlatform.setItems(possiblePlatform);
+                        comboPlatform.setText(possiblePlatform[possiblePlatform.length - 1]);
+                    } else {
+                        possiblePlatform = new String[] {};
+                        comboPlatform.setItems(possiblePlatform);
+                    }
+                }
+            }
+        };
+
+        // listener language_cpp, language_cpp03, language_cs, language_java
+        language_cpp.addSelectionListener(languageListenerCompile);
+        language_cpp03.addSelectionListener(languageListenerCompile);
+        language_cs.addSelectionListener(languageListenerCompile);
+        language_java.addSelectionListener(languageListenerCompile);
     }
 
     /**
@@ -1437,10 +1494,11 @@ public class GUI_RTIPerftest {
         language_cpp.setSelection(true);
         Button language_cpp03 = new Button(groupLanguage, SWT.RADIO);
         language_cpp03.setText("CPP03");
-        Button language_cs = new Button(groupLanguage, SWT.RADIO);
-        language_cs.setText("C#");
         Button language_java = new Button(groupLanguage, SWT.RADIO);
         language_java.setText("JAVA");
+        Button language_cs = new Button(groupLanguage, SWT.RADIO);
+        language_cs.setText("C#");
+        language_cs.setEnabled(getOperatingSystemType() == OSType.Win);
 
         // two radio button for the delivery
         Group groupDelivery = new Group(compositeExecution, SWT.NONE);
@@ -1696,6 +1754,41 @@ public class GUI_RTIPerftest {
                 outputTextField.setText("");
             }
         });
+
+        SelectionAdapter languageListenerExecution = new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent event) {
+                System.out.println("Button language clicked execution");
+                if (System.getenv("NDDSHOME") != null && System.getenv("NDDSHOME").contains("5.3")) {
+                    // TODO check that it is 5.3.0 >=
+                    List<String> newListPlaform = new ArrayList<String>();
+                    if (language_cpp.getSelection()) {
+                        newListPlaform = listPlatform.getListPlaform("C++");
+                    } else if (language_cpp03.getSelection()) {
+                        newListPlaform = listPlatform.getListPlaform("C++03");
+                    } else if (language_java.getSelection()) {
+                        newListPlaform = listPlatform.getListPlaform("Java");
+                    } else if (language_cs.getSelection()) {
+                        newListPlaform = listPlatform.getListPlaform("C#");
+                    }
+                    if (!newListPlaform.isEmpty()) {
+                        possiblePlatform = (String[]) newListPlaform.toArray(new String[0]);
+                        Arrays.sort(possiblePlatform);
+                        comboPlatform.setItems(possiblePlatform);
+                        comboPlatform.setText(possiblePlatform[possiblePlatform.length - 1]);
+                    } else {
+                        possiblePlatform = new String[] {};
+                        comboPlatform.setItems(possiblePlatform);
+                    }
+                }
+            }
+        };
+
+        // listener language_cpp, language_cpp03, language_cs, language_java
+        language_cpp.addSelectionListener(languageListenerExecution);
+        language_cpp03.addSelectionListener(languageListenerExecution);
+        language_cs.addSelectionListener(languageListenerExecution);
+        language_java.addSelectionListener(languageListenerExecution);
     }
 
     /**
