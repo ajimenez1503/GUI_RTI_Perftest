@@ -1,4 +1,5 @@
 package GUI_RTIPerftest;
+
 import GUI_RTIPerftest.OSType;
 import java.io.InputStreamReader;
 
@@ -27,7 +28,6 @@ public class ListPlatform {
     private boolean ready;
     private OSType detectedOS;
     private List<String> possibleOS;
-    
 
     public ListPlatform(OSType _detectedOS) {
         supportedPlatforms = new LinkedHashMap<String, List<String>>();
@@ -36,51 +36,50 @@ public class ListPlatform {
         ready = false;
         detectedOS = _detectedOS;
         possibleOS = new ArrayList<String>();
-        possibleOS.addAll(Arrays.asList( "C++", "C++03","C#","Java" ));
+        possibleOS.addAll(Arrays.asList("C++", "C++03", "C#", "Java"));
     }
-    
+
     public void setNDDSHOME(String _NDDSHOME) {
         NDDSHOME = _NDDSHOME;
     }
-    
-    public boolean isReady(){
-        return !supportedPlatforms.isEmpty();
-    }
 
     // Must be called from a non-UI thread, or the executeCommand will hang
-    public LinkedHashMap<String, List<String>> getPlatform() {
-        try {
-            // First we will need to create a temporal directory
-            Path tmpPath = Files.createTempDirectory("");
-
+    public void getPlatform() {
+        List<String> availableListPlaform = scanPlatforms();
+        if (!availableListPlaform.isEmpty()) {
             try {
-                // Run codegen in that path in order to get the platforms
-                Process proc = Runtime.getRuntime()
-                        .exec(NDDSHOME + "/bin/rtiddsgen -printSupportedPlatforms -d " + tmpPath.toString());
-                new BufferedReader(new InputStreamReader(proc.getInputStream()));
+                // First we will need to create a temporal directory
+                Path tmpPath = Files.createTempDirectory("");
+
                 try {
-                    proc.waitFor();
-                } catch (InterruptedException e) {
+                    // Run codegen in that path in order to get the platforms
+                    Process proc = Runtime.getRuntime().exec(NDDSHOME + File.separator + "bin" + File.separator
+                            + "rtiddsgen -printSupportedPlatforms -d " + tmpPath.toString());
+                    new BufferedReader(new InputStreamReader(proc.getInputStream()));
+                    try {
+                        proc.waitFor();
+                    } catch (InterruptedException e) {
+                        System.out.println(e.getMessage());
+                    }
+                    // Open the file that has been generated and start to parse
+                    // it.
+                    if (!parsePlatforms(tmpPath.toString() + File.separator + file, availableListPlaform)) {
+                        System.out.println(ERR_PARSING_FILE);
+                        ready = false;
+                    } else {
+                        ready = true;
+                    }
+
+                } catch (IOException e) {
                     System.out.println(e.getMessage());
                 }
-                // Open the file that has been generated and start to parse it.
-                if ( !parsePlatforms(tmpPath.toString() + File.separator + file)) {
-                    System.out.println(ERR_PARSING_FILE);
-                    ready = false;
-                } else {
-                    ready = true;
-                }
-                
             } catch (IOException e) {
-                System.out.println(e.getMessage());
+                System.out.println(ERR_PARSING_FILE);
             }
-        } catch (IOException e) {
-            System.out.println(ERR_PARSING_FILE);
         }
-        return supportedPlatforms;
     }
 
-    public boolean parsePlatforms(String fileName) {
+    public boolean parsePlatforms(String fileName, List<String> availableListPlaform) {
         File xmlFile = new File(fileName);
         if (!xmlFile.exists()) {
             return false;
@@ -89,7 +88,6 @@ public class ListPlatform {
         if (!xmlFile.canRead()) {
             return false;
         }
-
         supportedPlatforms.clear();
 
         try {
@@ -106,7 +104,7 @@ public class ListPlatform {
                 if (languageNode.getNodeType() != Node.ELEMENT_NODE) {
                     continue;
                 }
-                if (possibleOS.contains(languageNode.getAttributes().item(0).getNodeValue())){
+                if (possibleOS.contains(languageNode.getAttributes().item(0).getNodeValue())) {
                     NodeList platformNodes = languageNode.getChildNodes();
                     List<String> platforms = new ArrayList<String>();
 
@@ -115,7 +113,9 @@ public class ListPlatform {
                         if (platformNode.getNodeType() != Node.ELEMENT_NODE) {
                             continue;
                         }
-                        if (platformNode.getFirstChild().getNodeValue().contains(detectedOS.name())) {
+
+                        if (platformNode.getFirstChild().getNodeValue().contains(detectedOS.name())
+                                && availableListPlaform.contains(platformNode.getFirstChild().getNodeValue())) {
                             platforms.add(platformNode.getFirstChild().getNodeValue());
                         }
                     }
@@ -129,15 +129,45 @@ public class ListPlatform {
         return true;
     }
 
-    public List<String> getListPlaform(String languge) {
-        while (!ready){ // TODO max time to wait
+    public List<String> getListPlaform(String language) {
+        while (!ready) { // TODO max time to wait
             System.out.println("wait for platform");
         }
-        if(possibleOS.contains(languge)) {
-            return supportedPlatforms.get(languge);
+        if (possibleOS.contains(language)) {
+            return supportedPlatforms.get(language);
         } else {
+            System.out.println("The language " + language + " is not available.");
             return new ArrayList<String>();
         }
+    }
+
+    /**
+     * Returns the list of installed platforms.
+     *
+     * The function determines the list by scanning the NDDSHOME lib directory.
+     *
+     * @return List<String>
+     */
+    private List<String> scanPlatforms() {
+
+        List<String> listPlaform = new ArrayList<String>();
+        File libsDir = new File(NDDSHOME + File.separator + "lib");
+        if (libsDir.isDirectory()) {
+            String[] libs = libsDir.list();
+
+            for (int i = 0; i < libs.length; ++i) {
+                // Do not add hidden files to the list
+                if (libs[i].startsWith(".")) {
+                    continue;
+                }
+                // Skip the "java" directory if present
+                if (libs[i].equals("java")) {
+                    continue;
+                }
+                listPlaform.add(libs[i]);
+            }
+        }
+        return listPlaform;
     }
 
 }

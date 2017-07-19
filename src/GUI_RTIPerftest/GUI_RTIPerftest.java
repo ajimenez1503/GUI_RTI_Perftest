@@ -218,15 +218,15 @@ public class GUI_RTIPerftest {
 
         // check if Linux or Win or Darwin
         if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
-            command = "./build.sh";
+            command = "." + File.separator + "build.sh";
         } else if (getOperatingSystemType() == OSType.Win
                 || get_paramenter("--platform").toLowerCase().contains("win")) {
-            command = "/build.bat";
+            command = "build.bat";
             command += get_paramenter("--skip-cs-build");
             // C# just in win
         } else if (getOperatingSystemType() == OSType.Darwin
                 || get_paramenter("--platform").toLowerCase().contains("darwin")) {
-            command = "./build.sh";
+            command = "." + File.separator + "build.sh";
         } else {
             show_error("You must specify a correct platform");
             return false;
@@ -261,7 +261,7 @@ public class GUI_RTIPerftest {
             Chart_RTIPerftest chart, boolean display_real_time) {
         outputTextField.setText("");
         // create parameter
-        String command = "./bin/";
+        String command = "." + File.separator + "bin" + File.separator;
 
         // check if Linux or Win or Darwin
         if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
@@ -275,7 +275,7 @@ public class GUI_RTIPerftest {
             case cs:
                 return false;
             case java:
-                command += "Release/perftest_java.sh";
+                command += "Release" + File.separator + "perftest_java.sh";
                 break;
             }
         } else if (getOperatingSystemType() == OSType.Win
@@ -291,7 +291,7 @@ public class GUI_RTIPerftest {
                 command += get_paramenter("platform") + "/release/perftest_cs";
                 break;
             case java:
-                command += "Release/perftest_java.bat";
+                command += "Release" + File.separator + "perftest_java.bat";
                 break;
             }
         } else if (getOperatingSystemType() == OSType.Darwin
@@ -306,7 +306,7 @@ public class GUI_RTIPerftest {
             case cs:
                 return false;
             case java:
-                command += "Release/perftest_java.bat";
+                command += "Release" + File.separator + "perftest_java.bat";
                 break;
             }
         } else {
@@ -383,13 +383,13 @@ public class GUI_RTIPerftest {
 
         // check if Linux or Win or Darwin
         if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
-            command = "./build.sh --clean";
+            command = "." + File.separator + "build.sh --clean";
         } else if (getOperatingSystemType() == OSType.Win
                 || get_paramenter("--platform").toLowerCase().contains("win")) {
             command = "build.bat --clean";
         } else if (getOperatingSystemType() == OSType.Darwin
                 || get_paramenter("--platform").toLowerCase().contains("darwin")) {
-            command = "./build.sh --clean";
+            command = "." + File.separator + "build.sh --clean";
         } else {
             show_error("You must specify a correct platform");
             return false;
@@ -1784,7 +1784,7 @@ public class GUI_RTIPerftest {
             }
         };
 
-        // listener language_cpp, language_cpp03, language_cs, language_java
+        // Listener language_cpp, language_cpp03, language_cs, language_java
         language_cpp.addSelectionListener(languageListenerExecution);
         language_cpp03.addSelectionListener(languageListenerExecution);
         language_cs.addSelectionListener(languageListenerExecution);
@@ -1798,10 +1798,11 @@ public class GUI_RTIPerftest {
      */
     private boolean kill_job() {
         if (exec.getWatchdog() != null) {
-            if (exec.getWatchdog().isWatching()) {
-                exec.getWatchdog().destroyProcess();
-                return true;
-            }
+            // TODO check if it is necessary -
+            // if(exec.getWatchdog().isWatching()) {
+            exec.getWatchdog().destroyProcess();
+            System.out.println("----------------------------------------------- Kill job");
+            return true;
         }
         return false;
     }
@@ -1871,7 +1872,7 @@ public class GUI_RTIPerftest {
             ave_value = -1.0;
             incompatibility = false;
             folder_output = _folder_output;
-            key_error = new String[] { "incompatible", "Problem", "ERROR" };
+            key_error = new String[] { "incompatible", "Problem", "ERROR", "inconsistent" };
         }
 
         @Override

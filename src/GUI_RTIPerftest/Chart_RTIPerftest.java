@@ -101,4 +101,3 @@ public class Chart_RTIPerftest {
         return result;
     }
 }
-
