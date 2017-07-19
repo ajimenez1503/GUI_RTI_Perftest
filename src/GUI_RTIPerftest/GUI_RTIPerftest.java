@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
@@ -1723,6 +1724,7 @@ public class GUI_RTIPerftest {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 System.out.println("Button btnSecureOption clicked");
+                show_error("Security paramters are not implemented yet");
             }
         });
 
@@ -1801,7 +1803,6 @@ public class GUI_RTIPerftest {
             // TODO check if it is necessary -
             // if(exec.getWatchdog().isWatching()) {
             exec.getWatchdog().destroyProcess();
-            System.out.println("----------------------------------------------- Kill job");
             return true;
         }
         return false;
