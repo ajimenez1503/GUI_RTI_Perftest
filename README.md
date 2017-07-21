@@ -27,7 +27,7 @@ Unzip the packages.
 ## Configure Eclipse to use SWT
 
 * Download SWT stable release for Eclipse in [Eclipse SWT Project Page](http://www.eclipse.org/swt/)
-* Download a zip file that contains our org.eclipes.swt project
+* Download a zip file that contains our org.eclipes.swt project on SWT Binary and Source.
 * Inside Eclipse, select Import / Existing Projects into Workspace.
 
 ## Add Java build path

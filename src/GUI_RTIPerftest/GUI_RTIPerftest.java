@@ -27,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
@@ -1888,6 +1887,7 @@ public class GUI_RTIPerftest {
                             .substring(line.indexOf("Latency:") + 8, line.indexOf("us  Ave")).replaceAll("\\s+", ""));
                     ave_value = Double.parseDouble(
                             line.substring(line.indexOf("Ave") + 3, line.indexOf("us  Std")).replaceAll("\\s+", ""));
+                    chart.add(instant_value, ave_value);
                 }
 
             } else { // if (type == ExecutionType.Sub) {
@@ -1898,7 +1898,9 @@ public class GUI_RTIPerftest {
                             .substring(line.indexOf("Mbps:") + 5, line.indexOf("Mbps(ave):")).replaceAll("\\s+", ""));
                     ave_value = Double.parseDouble(line
                             .substring(line.indexOf("Mbps(ave):") + 10, line.indexOf("Lost:")).replaceAll("\\s+", ""));
+                    chart.add(instant_value, ave_value);
                 }
+
             }
             if (line.contains("Length:")) { // Always display at the end
                 display_end = true;
@@ -1911,29 +1913,20 @@ public class GUI_RTIPerftest {
                     }
                 }
             }
-
-            Display.getDefault().syncExec(new Runnable() {
-                public void run() {
-                    String lineCopy = line;
-
-                    if (instant_value != -1.0) {
-                        chart.update(instant_value, ave_value);
-                        if (display_real_time) {
-                            chart.redraw();
-                        }
-                    }
-                    if (display_real_time) {
+            if (display_real_time || display_end) {
+                Display.getDefault().syncExec(new Runnable() {
+                    public void run() {
+                        String lineCopy = line;
+                        chart.update();
+                        chart.redraw();
                         outputControl.append(lineCopy + "\n");
                         if (incompatibility) {
                             folder_output.setBackground(new Color(Display.getCurrent(), 255, 102, 102));
                         }
-                    } else if (display_end) {
-                        chart.redraw();
-                        outputControl.append(lineCopy + "\n");
                     }
+                });
+            }
 
-                }
-            });
             System.out.println(line);
         }
     }

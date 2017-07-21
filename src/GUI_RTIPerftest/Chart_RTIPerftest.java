@@ -53,6 +53,18 @@ public class Chart_RTIPerftest {
     }
 
     /**
+     * Add values
+     * 
+     * @param instant
+     * @param ave
+     * 
+     */
+    public void add(Double instant, Double ave) {
+        data_instant.add(instant);
+        data_ave.add(ave);
+    }
+
+    /**
      * reset chart
      * 
      */
@@ -65,17 +77,14 @@ public class Chart_RTIPerftest {
             chart.getSeriesSet().deleteSeries(lineSeriesAve.getId());
             this.redraw();
         }
+        add(0.0, 0.0);
     }
 
     /**
      * update array
      * 
-     * @param instant_value
-     *            double
      */
-    public void update(double instant_value, double ave_value) {
-        data_instant.add(instant_value);
-        data_ave.add(ave_value);
+    public void update() {
         // create line series
         lineSeries.setYSeries(toPrimitive(data_instant.toArray(new Double[data_instant.size()])));
         lineSeriesAve.setYSeries(toPrimitive(data_ave.toArray(new Double[data_ave.size()])));
@@ -88,9 +97,11 @@ public class Chart_RTIPerftest {
      *            double
      */
     public void redraw() {
-        chart.redraw();
-        // adjust the axis range
-        chart.getAxisSet().adjustRange();
+        if (data_instant.size() > 1) {
+            chart.redraw();
+            // adjust the axis range
+            chart.getAxisSet().adjustRange();
+        }
     }
 
     private double[] toPrimitive(Double[] array) {
