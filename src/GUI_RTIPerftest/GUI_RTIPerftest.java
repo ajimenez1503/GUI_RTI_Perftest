@@ -1921,6 +1921,7 @@ public class GUI_RTIPerftest {
                         chart.update();
                         chart.redraw();
                         outputControl.append(lineCopy + "\n");
+                        outputControl.setTopIndex(outputControl.getLineCount() - 1);
                         if (incompatibility) {
                             folder_output.setBackground(new Color(Display.getCurrent(), 255, 102, 102));
                         }
