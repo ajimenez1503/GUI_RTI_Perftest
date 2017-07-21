@@ -219,14 +219,14 @@ public class GUI_RTIPerftest {
         // check if Linux or Win or Darwin
         if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
             command = "." + File.separator + "build.sh";
+        } else if (getOperatingSystemType() == OSType.Darwin
+                || get_paramenter("--platform").toLowerCase().contains("darwin")) {
+            command = "." + File.separator + "build.sh";
         } else if (getOperatingSystemType() == OSType.Win
                 || get_paramenter("--platform").toLowerCase().contains("win")) {
             command = "build.bat";
             command += get_paramenter("--skip-cs-build");
             // C# just in win
-        } else if (getOperatingSystemType() == OSType.Darwin
-                || get_paramenter("--platform").toLowerCase().contains("darwin")) {
-            command = "." + File.separator + "build.sh";
         } else {
             show_error("You must specify a correct platform");
             return false;
@@ -267,10 +267,10 @@ public class GUI_RTIPerftest {
         if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
             switch (language) {
             case cpp:
-                command += get_paramenter("platform") + "/release/perftest_cpp";
+                command += get_paramenter("platform") + File.separator + "release" + File.separator + "perftest_cpp";
                 break;
             case cpp03:
-                command += get_paramenter("platform") + "/release/perftest_cpp03";
+                command += get_paramenter("platform") + File.separator + "release" + File.separator + "perftest_cpp03";
                 break;
             case cs:
                 return false;
@@ -278,33 +278,33 @@ public class GUI_RTIPerftest {
                 command += "Release" + File.separator + "perftest_java.sh";
                 break;
             }
-        } else if (getOperatingSystemType() == OSType.Win
-                || get_paramenter("--platform").toLowerCase().contains("win")) {
-            switch (language) {
-            case cpp:
-                command += get_paramenter("platform") + "/release/perftest_cpp";
-                break;
-            case cpp03:
-                command += get_paramenter("platform") + "/release/perftest_cpp03";
-                break;
-            case cs:
-                command += get_paramenter("platform") + "/release/perftest_cs";
-                break;
-            case java:
-                command += "Release" + File.separator + "perftest_java.bat";
-                break;
-            }
         } else if (getOperatingSystemType() == OSType.Darwin
                 || get_paramenter("--platform").toLowerCase().contains("darwin")) {
             switch (language) {
             case cpp:
-                command += get_paramenter("platform") + "/release/perftest_cpp03";
+                command += get_paramenter("platform") + File.separator + "release" + File.separator + "perftest_cpp";
                 break;
             case cpp03:
-                command += get_paramenter("platform") + "/release/perftest_cpp";
+                command += get_paramenter("platform") + File.separator + "release" + File.separator + "perftest_cpp03";
                 break;
             case cs:
                 return false;
+            case java:
+                command += "Release" + File.separator + "perftest_java.bat";
+                break;
+            }
+        } else if (getOperatingSystemType() == OSType.Win
+                || get_paramenter("--platform").toLowerCase().contains("win")) {
+            switch (language) {
+            case cpp:
+                command += get_paramenter("platform") + File.separator + "release" + File.separator + "perftest_cpp";
+                break;
+            case cpp03:
+                command += get_paramenter("platform") + File.separator + "release" + File.separator + "perftest_cpp03";
+                break;
+            case cs:
+                command += get_paramenter("platform") + File.separator + "release" + File.separator + "perftest_cs";
+                break;
             case java:
                 command += "Release" + File.separator + "perftest_java.bat";
                 break;
@@ -314,6 +314,7 @@ public class GUI_RTIPerftest {
             return false;
         }
 
+        // TODO improve, it could not work on Window
         if (!path_exists(command.replace("./", get_paramenter("Perftest") + "/"))) {
             show_error("The path '" + command.replace("./", get_paramenter("Perftest") + "/")
                     + "' to execute perftest does not exists.");
@@ -384,12 +385,12 @@ public class GUI_RTIPerftest {
         // check if Linux or Win or Darwin
         if (getOperatingSystemType() == OSType.Linux || get_paramenter("--platform").toLowerCase().contains("linux")) {
             command = "." + File.separator + "build.sh --clean";
-        } else if (getOperatingSystemType() == OSType.Win
-                || get_paramenter("--platform").toLowerCase().contains("win")) {
-            command = "build.bat --clean";
         } else if (getOperatingSystemType() == OSType.Darwin
                 || get_paramenter("--platform").toLowerCase().contains("darwin")) {
             command = "." + File.separator + "build.sh --clean";
+        } else if (getOperatingSystemType() == OSType.Win
+                || get_paramenter("--platform").toLowerCase().contains("win")) {
+            command = "build.bat --clean";
         } else {
             show_error("You must specify a correct platform");
             return false;
